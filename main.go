@@ -52,10 +52,13 @@ type game struct {
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
 // messages and updates the model in response to them.
 func (m *model) Update(msg gruid.Msg) gruid.Effect {
+	m.action = action{} // reset last action information
 	switch msg := msg.(type) {
 	case gruid.MsgKeyDown:
+		// update action information on key down
 		m.updateMsgKeyDown(msg)
 	}
+	// handle action (if any)
 	return m.handleAction()
 }
 
