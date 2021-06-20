@@ -1,3 +1,5 @@
+// This file manages font drawing and colors.
+
 package main
 
 import (

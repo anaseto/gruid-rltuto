@@ -1,3 +1,5 @@
+// This file manages actions resulting from user input.
+
 package main
 
 import "github.com/anaseto/gruid"
