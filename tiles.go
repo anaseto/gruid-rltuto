@@ -13,6 +13,25 @@ import (
 	"github.com/anaseto/gruid/tiles"
 )
 
+// TileDrawer implements TileManager from the gruid-sdl module.
+type TileDrawer struct {
+	drawer *tiles.Drawer
+}
+
+// GetImage implements TileManager.GetImage.
+func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
+	// We use some colors from https://github.com/jan-warchol/selenized,
+	// using the palette variant with dark backgound and light foreground.
+	fg := image.NewUniform(color.RGBA{0xad, 0xbc, 0xbc, 255})
+	bg := image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
+	return t.drawer.Draw(c.Rune, fg, bg)
+}
+
+// TileSize implements TileManager.TileSize.
+func (t *TileDrawer) TileSize() gruid.Point {
+	return t.drawer.Size()
+}
+
 // GetTileDrawer returns a TileDrawer that implements TileManager for the sdl
 // driver, or an error if there were problems setting up the font face.
 func GetTileDrawer() (*TileDrawer, error) {
@@ -40,23 +59,4 @@ func GetTileDrawer() (*TileDrawer, error) {
 		return nil, err
 	}
 	return t, nil
-}
-
-// TileDrawer implements TileManager.
-type TileDrawer struct {
-	drawer *tiles.Drawer
-}
-
-// GetImage implements TileManager.GetImage.
-func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
-	// We use some colors from https://github.com/jan-warchol/selenized,
-	// using the palette variant with dark backgound and light foreground.
-	fg := image.NewUniform(color.RGBA{0xad, 0xbc, 0xbc, 255})
-	bg := image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
-	return t.drawer.Draw(c.Rune, fg, bg)
-}
-
-// TileSize implements TileManager.TileSize.
-func (t *TileDrawer) TileSize() gruid.Point {
-	return t.drawer.Size()
 }
