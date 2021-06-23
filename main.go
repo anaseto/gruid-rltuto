@@ -25,13 +25,13 @@ func main() {
 		TileManager: t,
 	})
 
-	// Define new application
+	// Define new application using the SDL2 gruid driver and our model.
 	app := gruid.NewApp(gruid.AppConfig{
 		Driver: dr,
 		Model:  m,
 	})
 
-	// Start application
+	// Start the application.
 	if err := app.Start(context.Background()); err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,5 @@
-// This file manages font drawing and colors.
+// This file manages font drawing and colors. The tiles package from the gruid
+// module handles most of the work for us.
 
 package main
 
@@ -13,7 +14,11 @@ import (
 	"github.com/anaseto/gruid/tiles"
 )
 
-// TileDrawer implements TileManager from the gruid-sdl module.
+// TileDrawer implements TileManager from the gruid-sdl module. It is used to
+// provide a mapping from virtual grid cells to images using the tiles package.
+// In this tutorial, we just draw a font with a given foreground and
+// background, but it would be possible to make a tiles version with custom
+// drawings for cells.
 type TileDrawer struct {
 	drawer *tiles.Drawer
 }
@@ -24,10 +29,17 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 	// using the palette variant with dark backgound and light foreground.
 	fg := image.NewUniform(color.RGBA{0xad, 0xbc, 0xbc, 255})
 	bg := image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
+	// NOTE: Here, we will add support for more colors further in the
+	// tutorial.
+
+	// We return an image with the given rune drawn using the previously
+	// defined foreground and background colors.
 	return t.drawer.Draw(c.Rune, fg, bg)
 }
 
-// TileSize implements TileManager.TileSize.
+// TileSize implements TileManager.TileSize. It returns the tile size, in
+// pixels. In this tutorial, it corresponds to the size of a character with the
+// font we use.
 func (t *TileDrawer) TileSize() gruid.Point {
 	return t.drawer.Size()
 }

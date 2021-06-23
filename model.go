@@ -23,11 +23,14 @@ type game struct {
 func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	m.action = action{} // reset last action information
 	switch msg := msg.(type) {
+	case gruid.MsgInit:
+		// Initialization: set player position in the center.
+		m.game.PlayerPos = m.grid.Size().Div(2)
 	case gruid.MsgKeyDown:
-		// update action information on key down
+		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
 	}
-	// handle action (if any)
+	// Handle action (if any).
 	return m.handleAction()
 }
 

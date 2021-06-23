@@ -1,6 +1,6 @@
 github.com/anaseto/gruid v0.18.0/go.mod h1:csCeg/kLRFAAF4gdrx9EYrQbKBBprmWmEdmR0QMmBc4=
-github.com/anaseto/gruid v0.20.0 h1:HO3NtYwfC7ySGhJQm0kIvo/0F7ZdSEJmGyoJvgZqAnM=
-github.com/anaseto/gruid v0.20.0/go.mod h1:csCeg/kLRFAAF4gdrx9EYrQbKBBprmWmEdmR0QMmBc4=
+github.com/anaseto/gruid v0.21.1 h1:52ZxW2MLzXlGfydPMWB+4auI9ilvh8PvVH0SscxZjaE=
+github.com/anaseto/gruid v0.21.1/go.mod h1:csCeg/kLRFAAF4gdrx9EYrQbKBBprmWmEdmR0QMmBc4=
 github.com/anaseto/gruid-sdl v0.1.1 h1:rq7jcEVelmWDDVVPRtIl66pB+OWIKeeZkMZvhuILXcQ=
 github.com/anaseto/gruid-sdl v0.1.1/go.mod h1:DzFY/J0/lD3MmkqZBsVYEjQLy5ZssMDUUjI1Nz3wJUE=
 github.com/veandco/go-sdl2 v0.4.5 h1:GFIjMabK7y2XWpr9sGvN7RDKHt7vrA7XPTUW60eOw+Y=
