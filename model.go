@@ -4,7 +4,10 @@
 
 package main
 
-import "github.com/anaseto/gruid"
+import (
+	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/rl"
+)
 
 // models represents our main application state.
 type model struct {
@@ -15,7 +18,8 @@ type model struct {
 
 // game represents information relevant the current game's state.
 type game struct {
-	PlayerPos gruid.Point // tracks player position
+	ECS *ECS // entities present on the map
+	Map Map  // the game map, made of tiles
 }
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -24,8 +28,19 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	m.action = action{} // reset last action information
 	switch msg := msg.(type) {
 	case gruid.MsgInit:
-		// Initialization: set player position in the center.
-		m.game.PlayerPos = m.grid.Size().Div(2)
+		// Initialize map
+		size := m.grid.Size() // map size: for now the whole window
+		m.game.Map.Grid = rl.NewGrid(size.X, size.Y)
+		m.game.Map.Grid.Fill(Floor)
+		for i := 0; i < 3; i++ {
+			// We add a few walls. We'll deal with map generation
+			// in the next part of the tutorial.
+			m.game.Map.Grid.Set(gruid.Point{30 + i, 12}, Wall)
+		}
+		// Initialize entities
+		m.game.ECS = &ECS{}
+		// Initialization: create a player entity centered on the map.
+		m.game.ECS.AddEntity(&Player{P: size.Div(2)})
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -53,14 +68,18 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
 // grid.
 func (m *model) Draw() gruid.Grid {
-	it := m.grid.Iterator()
+	m.grid.Fill(gruid.Cell{Rune: ' '})
+	// We draw the map tiles.
+	it := m.game.Map.Grid.Iterator()
 	for it.Next() {
-		switch {
-		case it.P() == m.game.PlayerPos:
-			it.SetCell(gruid.Cell{Rune: '@'})
-		default:
-			it.SetCell(gruid.Cell{Rune: ' '})
-		}
+		m.grid.Set(it.P(), gruid.Cell{Rune: m.game.Map.Rune(it.Cell())})
+	}
+	// We draw the entities.
+	for _, e := range m.game.ECS.Entities {
+		m.grid.Set(e.Pos(), gruid.Cell{
+			Rune:  e.Rune(),
+			Style: gruid.Style{Fg: e.Color()},
+		})
 	}
 	return m.grid
 }
