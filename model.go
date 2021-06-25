@@ -5,6 +5,9 @@
 package main
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/rl"
 )
@@ -31,16 +34,12 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		// Initialize map
 		size := m.grid.Size() // map size: for now the whole window
 		m.game.Map.Grid = rl.NewGrid(size.X, size.Y)
-		m.game.Map.Grid.Fill(Floor)
-		for i := 0; i < 3; i++ {
-			// We add a few walls. We'll deal with map generation
-			// in the next part of the tutorial.
-			m.game.Map.Grid.Set(gruid.Point{30 + i, 12}, Wall)
-		}
+		m.game.Map.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+		m.game.Map.Generate()
 		// Initialize entities
 		m.game.ECS = &ECS{}
 		// Initialization: create a player entity centered on the map.
-		m.game.ECS.AddEntity(&Player{P: size.Div(2)})
+		m.game.ECS.AddEntity(&Player{P: m.game.Map.RandomFloor()})
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
