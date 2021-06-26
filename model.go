@@ -6,7 +6,6 @@ package main
 
 import (
 	"github.com/anaseto/gruid"
-	"github.com/anaseto/gruid/rl"
 )
 
 // models represents our main application state.
@@ -19,7 +18,7 @@ type model struct {
 // game represents information relevant the current game's state.
 type game struct {
 	ECS *ECS // entities present on the map
-	Map Map  // the game map, made of tiles
+	Map *Map // the game map, made of tiles
 }
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -30,13 +29,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	case gruid.MsgInit:
 		// Initialize map
 		size := m.grid.Size() // map size: for now the whole window
-		m.game.Map.Grid = rl.NewGrid(size.X, size.Y)
-		m.game.Map.Grid.Fill(Floor)
-		for i := 0; i < 3; i++ {
-			// We add a few walls. We'll deal with map generation
-			// in the next part of the tutorial.
-			m.game.Map.Grid.Set(gruid.Point{30 + i, 12}, Wall)
-		}
+		m.game.Map = NewMap(size)
 		// Initialize entities
 		m.game.ECS = &ECS{}
 		// Initialization: create a player entity centered on the map.
