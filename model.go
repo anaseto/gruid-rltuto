@@ -5,11 +5,7 @@
 package main
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/anaseto/gruid"
-	"github.com/anaseto/gruid/rl"
 )
 
 // models represents our main application state.
@@ -22,7 +18,7 @@ type model struct {
 // game represents information relevant the current game's state.
 type game struct {
 	ECS *ECS // entities present on the map
-	Map Map  // the game map, made of tiles
+	Map *Map // the game map, made of tiles
 }
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -33,9 +29,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	case gruid.MsgInit:
 		// Initialize map
 		size := m.grid.Size() // map size: for now the whole window
-		m.game.Map.Grid = rl.NewGrid(size.X, size.Y)
-		m.game.Map.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
-		m.game.Map.Generate()
+		m.game.Map = NewMap(size)
 		// Initialize entities
 		m.game.ECS = &ECS{}
 		// Initialization: create a player entity centered on the map.
