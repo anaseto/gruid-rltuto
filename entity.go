@@ -3,7 +3,10 @@
 
 package main
 
-import "github.com/anaseto/gruid"
+import (
+	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/rl"
+)
 
 // ECS manages access, additions and removals of entities.  For now, we use a
 // simple list of entities as a representation. Later in the tutorial, we will
@@ -39,7 +42,18 @@ type Entity interface {
 // Player contains information relevant to the player. It implements the Entity
 // interface.
 type Player struct {
-	P gruid.Point // position on the map
+	P   gruid.Point // position on the map
+	FOV *rl.FOV     // player's field of view
+}
+
+// maxLOS is the maximum distance in player's field of view.
+const maxLOS = 10
+
+// NewPlayer returns a new Player entity at a given position.
+func NewPlayer(p gruid.Point) *Player {
+	player := &Player{P: p}
+	player.FOV = rl.NewFOV(gruid.NewRange(-maxLOS, -maxLOS, maxLOS+1, maxLOS+1))
+	return player
 }
 
 func (p *Player) Pos() gruid.Point {

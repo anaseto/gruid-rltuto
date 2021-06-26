@@ -4,6 +4,7 @@ package main
 
 import (
 	"math/rand"
+	"time"
 
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
@@ -18,8 +19,20 @@ const (
 
 // Map represents the rectangular map of the game's level.
 type Map struct {
-	Grid rl.Grid
-	Rand *rand.Rand // random number generator
+	Grid     rl.Grid
+	Rand     *rand.Rand           // random number generator
+	Explored map[gruid.Point]bool // explored cells
+}
+
+// NewMap returns a new Map structure with a grid of given size.
+func NewMap(size gruid.Point) *Map {
+	m := &Map{
+		Grid:     rl.NewGrid(size.X, size.Y),
+		Rand:     rand.New(rand.NewSource(time.Now().UnixNano())),
+		Explored: make(map[gruid.Point]bool),
+	}
+	m.Generate()
+	return m
 }
 
 // Walkable returns true if at the given position there is a floor tile.
@@ -39,7 +52,7 @@ func (m *Map) Rune(c rl.Cell) (r rune) {
 }
 
 // Generate fills the Grid attribute of m with a procedurally generated map.
-func (m Map) Generate() {
+func (m *Map) Generate() {
 	// map generator using the rl package from gruid
 	mgen := rl.MapGen{Rand: m.Rand, Grid: m.Grid}
 	// cellular automata map generation with rules that give a cave-like
@@ -73,7 +86,7 @@ func (m *Map) RandomFloor() gruid.Point {
 // path implements the paths.Pather interface and is used to provide pathing
 // information in map generation.
 type path struct {
-	m  Map
+	m  *Map
 	nb paths.Neighbors
 }
 

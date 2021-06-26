@@ -5,11 +5,7 @@
 package main
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/anaseto/gruid"
-	"github.com/anaseto/gruid/rl"
 )
 
 // models represents our main application state.
@@ -22,7 +18,7 @@ type model struct {
 // game represents information relevant the current game's state.
 type game struct {
 	ECS *ECS // entities present on the map
-	Map Map  // the game map, made of tiles
+	Map *Map // the game map, made of tiles
 }
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -33,13 +29,12 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	case gruid.MsgInit:
 		// Initialize map
 		size := m.grid.Size() // map size: for now the whole window
-		m.game.Map.Grid = rl.NewGrid(size.X, size.Y)
-		m.game.Map.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
-		m.game.Map.Generate()
+		m.game.Map = NewMap(size)
 		// Initialize entities
 		m.game.ECS = &ECS{}
-		// Initialization: create a player entity centered on the map.
-		m.game.ECS.AddEntity(&Player{P: m.game.Map.RandomFloor()})
+		// Position the player in a random floor cell.
+		m.game.ECS.AddEntity(NewPlayer(m.game.Map.RandomFloor()))
+		m.UpdateFOV()
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -64,6 +59,13 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 	}
 }
 
+// Color definitions. For now, we use a special color for FOV. We start from 1,
+// because 0 is gruid.ColorDefault, which we use for default foreground and
+// background.
+const (
+	ColorFOV gruid.Color = iota + 1
+)
+
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
 // grid.
 func (m *model) Draw() gruid.Grid {
@@ -71,14 +73,26 @@ func (m *model) Draw() gruid.Grid {
 	// We draw the map tiles.
 	it := m.game.Map.Grid.Iterator()
 	for it.Next() {
-		m.grid.Set(it.P(), gruid.Cell{Rune: m.game.Map.Rune(it.Cell())})
+		if !m.game.Map.Explored[it.P()] {
+			continue
+		}
+		c := gruid.Cell{Rune: m.game.Map.Rune(it.Cell())}
+		if m.game.ECS.Player().FOV.Visible(it.P()) {
+			c.Style.Bg = ColorFOV
+		}
+		m.grid.Set(it.P(), c)
 	}
 	// We draw the entities.
 	for _, e := range m.game.ECS.Entities {
-		m.grid.Set(e.Pos(), gruid.Cell{
-			Rune:  e.Rune(),
-			Style: gruid.Style{Fg: e.Color()},
-		})
+		if !m.game.Map.Explored[e.Pos()] {
+			continue
+		}
+		c := m.grid.At(e.Pos())
+		c.Rune = e.Rune()
+		c.Style.Fg = e.Color()
+		m.grid.Set(e.Pos(), c)
+		// NOTE: We retrieved current cell at e.Pos() to preserve
+		// background (in FOV or not).
 	}
 	return m.grid
 }

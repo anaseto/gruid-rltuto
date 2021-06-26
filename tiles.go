@@ -28,10 +28,12 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 	// We use some colors from https://github.com/jan-warchol/selenized,
 	// using the palette variant with dark backgound and light foreground.
 	fg := image.NewUniform(color.RGBA{0xad, 0xbc, 0xbc, 255})
-	bg := image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
-	// NOTE: Here, we will add support for more colors further in the
-	// tutorial.
-
+	bg := image.NewUniform(color.RGBA{0x10, 0x3c, 0x48, 255})
+	// We define non default-colors (for FOV, ...).
+	switch c.Style.Bg {
+	case ColorFOV:
+		bg = image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
+	}
 	// We return an image with the given rune drawn using the previously
 	// defined foreground and background colors.
 	return t.drawer.Draw(c.Rune, fg, bg)
