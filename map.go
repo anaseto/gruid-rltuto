@@ -24,7 +24,7 @@ type Map struct {
 	Explored map[gruid.Point]bool // explored cells
 }
 
-// NewMap returns a new Map structure with a grid of given size.
+// NewMap returns a new map with given size.
 func NewMap(size gruid.Point) *Map {
 	m := &Map{
 		Grid:     rl.NewGrid(size.X, size.Y),
