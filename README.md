@@ -23,13 +23,7 @@ satisfying the `Entity` interface should have several methods that give
 information on position and display. As a first example, we introduce a
 `Player` type implementing the `Entity` interface.
 
-``` diff
-diff --git a/entity.go b/entity.go
-new file mode 100644
-index 0000000..824f0a1
---- /dev/null
-+++ b/entity.go
-@@ -0,0 +1,55 @@
+``` go
 +// This files handles a common representation for all kind of entities that can
 +// be placed on the map.
 +
@@ -90,13 +84,7 @@ index 0000000..824f0a1
 We also introduce a `Map` type for representing the map in `map.go`. We define
 `Wall` and `Floor` tiles, and give a graphical representation to them.
 
-``` diff
-diff --git a/map.go b/map.go
-new file mode 100644
-index 0000000..756fb1d
---- /dev/null
-+++ b/map.go
-@@ -0,0 +1,48 @@
+``` go
 +// This file contains map-related code.
 +
 +package main
