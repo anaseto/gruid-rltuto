@@ -30,7 +30,7 @@ graphical driver, and not a terminal one. The tutorial will
 normally assume you want to use SDL2, because it is more
 versatile, allowing both for tiles and ASCII. If you want to use the terminal
 driver, you may want to have a look at
-[gruid-examples](github.com/anaseto/gruid-examples), which has several examples
+[gruid-examples](https://github.com/anaseto/gruid-examples), which has several examples
 using different drivers (terminal, SDL and browser).
 
 If you intend to run the code of the tutorial, you should clone it with git.
