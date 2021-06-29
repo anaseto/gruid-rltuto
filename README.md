@@ -18,7 +18,7 @@ part](https://github.com/anaseto/gruid-rltuto/tree/part-1).
 # Part 0 - Setting Up (before any code)
 
 You need to install [Go](https://golang.org/) and
-[SDL2](https://libsdl.org/download-2.0.php SDL2) On Ubuntu or Debian:
+[SDL2](https://libsdl.org/download-2.0.php) On Ubuntu or Debian:
 
 ```
 sudo apt-get install libsdl2-dev
