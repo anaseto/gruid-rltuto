@@ -3,7 +3,7 @@
 This tutorial follows the overall structure of the [TCOD Python
 Tutorial](http://rogueliketutorials.com/tutorials/tcod/v2), but makes use of
 the [Go programming language](https://golang.org/) and the
-[gruid](https://github.com/anaseto gruid) roguelike game framework, instead of
+[gruid](https://github.com/anaseto) roguelike game framework, instead of
 TCOD.
 
 For now, this tutorial also assumes a bit more familiarity with programming and
