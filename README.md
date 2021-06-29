@@ -24,115 +24,115 @@ information on position and display. As a first example, we introduce a
 `Player` type implementing the `Entity` interface.
 
 ``` go
-+// This files handles a common representation for all kind of entities that can
-+// be placed on the map.
-+
-+package main
-+
-+import "github.com/anaseto/gruid"
-+
-+// ECS manages access, additions and removals of entities.  For now, we use a
-+// simple list of entities as a representation. Later in the tutorial, we will
-+// show how to provide additional representations to, for example, have
-+// efficient access to the entities that exist at a given position.
-+type ECS struct {
-+	Entities []Entity
-+}
-+
-+// Add adds a new entity.
-+func (es *ECS) AddEntity(e Entity) {
-+	es.Entities = append(es.Entities, e)
-+}
-+
-+// Player returns the Player entity.
-+func (es *ECS) Player() *Player {
-+	for _, e := range es.Entities {
-+		e, ok := e.(*Player)
-+		if ok {
-+			return e
-+		}
-+	}
-+	return nil
-+}
-+
-+// Entity represents an object or creature on the map.
-+type Entity interface {
-+	Pos() gruid.Point   // the position of the entity
-+	Rune() rune         // the character representing the entity
-+	Color() gruid.Color // the character's color
-+}
-+
-+// Player contains information relevant to the player. It implements the Entity
-+// interface.
-+type Player struct {
-+	P gruid.Point // position on the map
-+}
-+
-+func (p *Player) Pos() gruid.Point {
-+	return p.P
-+}
-+
-+func (p *Player) Rune() rune {
-+	return '@'
-+}
-+
-+func (p *Player) Color() gruid.Color {
-+	return gruid.ColorDefault
-+}
+// This files handles a common representation for all kind of entities that can
+// be placed on the map.
+
+package main
+
+import "github.com/anaseto/gruid"
+
+// ECS manages access, additions and removals of entities.  For now, we use a
+// simple list of entities as a representation. Later in the tutorial, we will
+// show how to provide additional representations to, for example, have
+// efficient access to the entities that exist at a given position.
+type ECS struct {
+	Entities []Entity
+}
+
+// Add adds a new entity.
+func (es *ECS) AddEntity(e Entity) {
+	es.Entities = append(es.Entities, e)
+}
+
+// Player returns the Player entity.
+func (es *ECS) Player() *Player {
+	for _, e := range es.Entities {
+		e, ok := e.(*Player)
+		if ok {
+			return e
+		}
+	}
+	return nil
+}
+
+// Entity represents an object or creature on the map.
+type Entity interface {
+	Pos() gruid.Point   // the position of the entity
+	Rune() rune         // the character representing the entity
+	Color() gruid.Color // the character's color
+}
+
+// Player contains information relevant to the player. It implements the Entity
+// interface.
+type Player struct {
+	P gruid.Point // position on the map
+}
+
+func (p *Player) Pos() gruid.Point {
+	return p.P
+}
+
+func (p *Player) Rune() rune {
+	return '@'
+}
+
+func (p *Player) Color() gruid.Color {
+	return gruid.ColorDefault
+}
 ```
 
 We also introduce a `Map` type for representing the map in `map.go`. We define
 `Wall` and `Floor` tiles, and give a graphical representation to them.
 
 ``` go
-+// This file contains map-related code.
-+
-+package main
-+
-+import (
-+	"github.com/anaseto/gruid"
-+	"github.com/anaseto/gruid/rl"
-+)
-+
-+// These constants represent the different kind of map tiles.
-+const (
-+	Wall rl.Cell = iota
-+	Floor
-+)
-+
-+// Map represents the rectangular map of the game's level.
-+type Map struct {
-+	Grid rl.Grid
-+}
-+
-+// NewMap returns a new map with given size.
-+func NewMap(size gruid.Point) *Map {
-+	m := &Map{}
-+	m.Grid = rl.NewGrid(size.X, size.Y)
-+	m.Grid.Fill(Floor)
-+	for i := 0; i < 3; i++ {
-+		// We add a few walls. We'll deal with map generation
-+		// in the next part of the tutorial.
-+		m.Grid.Set(gruid.Point{30 + i, 12}, Wall)
-+	}
-+	return m
-+}
-+
-+// Walkable returns true if at the given position there is a floor tile.
-+func (m *Map) Walkable(p gruid.Point) bool {
-+	return m.Grid.At(p) == Floor
-+}
-+
-+// Rune returns the character rune representing a given terrain.
-+func (m *Map) Rune(c rl.Cell) (r rune) {
-+	switch c {
-+	case Wall:
-+		r = '#'
-+	case Floor:
-+		r = '.'
-+	}
-+	return r
-+}
+// This file contains map-related code.
+
+package main
+
+import (
+	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/rl"
+)
+
+// These constants represent the different kind of map tiles.
+const (
+	Wall rl.Cell = iota
+	Floor
+)
+
+// Map represents the rectangular map of the game's level.
+type Map struct {
+	Grid rl.Grid
+}
+
+// NewMap returns a new map with given size.
+func NewMap(size gruid.Point) *Map {
+	m := &Map{}
+	m.Grid = rl.NewGrid(size.X, size.Y)
+	m.Grid.Fill(Floor)
+	for i := 0; i < 3; i++ {
+		// We add a few walls. We'll deal with map generation
+		// in the next part of the tutorial.
+		m.Grid.Set(gruid.Point{30 + i, 12}, Wall)
+	}
+	return m
+}
+
+// Walkable returns true if at the given position there is a floor tile.
+func (m *Map) Walkable(p gruid.Point) bool {
+	return m.Grid.At(p) == Floor
+}
+
+// Rune returns the character rune representing a given terrain.
+func (m *Map) Rune(c rl.Cell) (r rune) {
+	switch c {
+	case Wall:
+		r = '#'
+	case Floor:
+		r = '.'
+	}
+	return r
+}
 ```
 
 We then adjust the code of the `Draw` method in `model.go` to take into account
