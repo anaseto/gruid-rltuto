@@ -40,7 +40,7 @@ You can do this from the web UI, or on the terminal, for example:
 git clone https://github.com/anaseto/gruid-rltuto
 ```
 
-clones the repository, and then you can check a particular part:
+clones the repository, and then you can check out a particular part:
 
 ```
 git checkout part-1 
