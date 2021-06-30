@@ -31,9 +31,9 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		size := m.grid.Size() // map size: for now the whole window
 		m.game.Map = NewMap(size)
 		// Initialize entities
-		m.game.ECS = &ECS{}
+		m.game.ECS = NewECS()
 		// Initialization: create a player entity centered on the map.
-		m.game.ECS.AddEntity(&Player{P: m.game.Map.RandomFloor()})
+		m.game.ECS.PlayerID = m.game.ECS.AddEntity(&Player{}, m.game.Map.RandomFloor())
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -68,8 +68,8 @@ func (m *model) Draw() gruid.Grid {
 		m.grid.Set(it.P(), gruid.Cell{Rune: m.game.Map.Rune(it.Cell())})
 	}
 	// We draw the entities.
-	for _, e := range m.game.ECS.Entities {
-		m.grid.Set(e.Pos(), gruid.Cell{
+	for i, e := range m.game.ECS.Entities {
+		m.grid.Set(m.game.ECS.Positions[i], gruid.Cell{
 			Rune:  e.Rune(),
 			Style: gruid.Style{Fg: e.Color()},
 		})

@@ -5,46 +5,55 @@ package main
 
 import "github.com/anaseto/gruid"
 
-// ECS manages access, additions and removals of entities.  For now, we use a
-// simple list of entities as a representation. Later in the tutorial, we will
-// show how to provide additional representations to, for example, have
-// efficient access to the entities that exist at a given position.
+// ECS manages entities, as well as their positions. We don't go full “ECS”
+// (Entity-Component-System) in this tutorial, opting for a simpler hybrid
+// approach good enough for the tutorial purposes.
 type ECS struct {
-	Entities []Entity
+	Entities  []Entity            // list of entities
+	Positions map[int]gruid.Point // entity index: map position
+	PlayerID  int                 // index of Player's entity (for convenience)
 }
 
-// Add adds a new entity.
-func (es *ECS) AddEntity(e Entity) {
-	es.Entities = append(es.Entities, e)
-}
-
-// Player returns the Player entity.
-func (es *ECS) Player() *Player {
-	for _, e := range es.Entities {
-		e, ok := e.(*Player)
-		if ok {
-			return e
-		}
+// NewECS returns an initialized ECS structure.
+func NewECS() *ECS {
+	return &ECS{
+		Positions: map[int]gruid.Point{},
 	}
-	return nil
+}
+
+// Add adds a new entity at a given position and returns its index/id.
+func (es *ECS) AddEntity(e Entity, p gruid.Point) int {
+	i := len(es.Entities)
+	es.Entities = append(es.Entities, e)
+	es.Positions[i] = p
+	return i
+}
+
+// MoveEntity moves the i-th entity to p.
+func (es *ECS) MoveEntity(i int, p gruid.Point) {
+	es.Positions[i] = p
+}
+
+// MovePlayer moves the player entity to p.
+func (es *ECS) MovePlayer(p gruid.Point) {
+	es.MoveEntity(es.PlayerID, p)
+}
+
+// Player returns the Player entity. Just a shorthand for easily accessing the
+// Player entity.
+func (es *ECS) Player() *Player {
+	return es.Entities[es.PlayerID].(*Player) // index 0 for player entity (convention)
 }
 
 // Entity represents an object or creature on the map.
 type Entity interface {
-	Pos() gruid.Point   // the position of the entity
 	Rune() rune         // the character representing the entity
 	Color() gruid.Color // the character's color
 }
 
 // Player contains information relevant to the player. It implements the Entity
-// interface.
-type Player struct {
-	P gruid.Point // position on the map
-}
-
-func (p *Player) Pos() gruid.Point {
-	return p.P
-}
+// interface. Empty for now, but in next parts it will information like HP.
+type Player struct{}
 
 func (p *Player) Rune() rune {
 	return '@'

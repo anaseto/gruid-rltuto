@@ -23,10 +23,10 @@ const (
 func (m *model) handleAction() gruid.Effect {
 	switch m.action.Type {
 	case ActionMovement:
-		player := m.game.ECS.Player()
-		np := player.P.Add(m.action.Delta)
+		np := m.game.ECS.Positions[m.game.ECS.PlayerID]
+		np = np.Add(m.action.Delta)
 		if m.game.Map.Walkable(np) {
-			player.P = np
+			m.game.ECS.MovePlayer(np)
 		}
 	case ActionQuit:
 		// for now, just terminate with gruid End command: this will
