@@ -31,9 +31,9 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		size := m.grid.Size() // map size: for now the whole window
 		m.game.Map = NewMap(size)
 		// Initialize entities
-		m.game.ECS = &ECS{}
-		// Position the player in a random floor cell.
-		m.game.ECS.AddEntity(NewPlayer(m.game.Map.RandomFloor()))
+		m.game.ECS = NewECS()
+		// Initialization: create a player entity centered on the map.
+		m.game.ECS.PlayerID = m.game.ECS.AddEntity(NewPlayer(), m.game.Map.RandomFloor())
 		m.UpdateFOV()
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
@@ -83,14 +83,15 @@ func (m *model) Draw() gruid.Grid {
 		m.grid.Set(it.P(), c)
 	}
 	// We draw the entities.
-	for _, e := range m.game.ECS.Entities {
-		if !m.game.Map.Explored[e.Pos()] {
+	for i, e := range m.game.ECS.Entities {
+		p := m.game.ECS.Positions[i]
+		if !m.game.Map.Explored[p] {
 			continue
 		}
-		c := m.grid.At(e.Pos())
+		c := m.grid.At(p)
 		c.Rune = e.Rune()
 		c.Style.Fg = e.Color()
-		m.grid.Set(e.Pos(), c)
+		m.grid.Set(p, c)
 		// NOTE: We retrieved current cell at e.Pos() to preserve
 		// background (in FOV or not).
 	}
