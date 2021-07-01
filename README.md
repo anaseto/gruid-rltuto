@@ -14,5 +14,3 @@ For example, you can [compare
 changes](https://github.com/anaseto/gruid-rltuto/compare/part-1...part-2)
 between two parts, or see the code of a [particular
 part](https://github.com/anaseto/gruid-rltuto/tree/part-1).
-
-- [Part 0 & Part 1](https://github.com/anaseto/gruid-rltuto/tree/part-1)
