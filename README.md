@@ -31,46 +31,55 @@ package main
 
 import "github.com/anaseto/gruid"
 
-// ECS manages access, additions and removals of entities.  For now, we use a
-// simple list of entities as a representation. Later in the tutorial, we will
-// show how to provide additional representations to, for example, have
-// efficient access to the entities that exist at a given position.
+// ECS manages entities, as well as their positions. We don't go full “ECS”
+// (Entity-Component-System) in this tutorial, opting for a simpler hybrid
+// approach good enough for the tutorial purposes.
 type ECS struct {
-	Entities []Entity
+	Entities  []Entity            // list of entities
+	Positions map[int]gruid.Point // entity index: map position
+	PlayerID  int                 // index of Player's entity (for convenience)
 }
 
-// Add adds a new entity.
-func (es *ECS) AddEntity(e Entity) {
-	es.Entities = append(es.Entities, e)
-}
-
-// Player returns the Player entity.
-func (es *ECS) Player() *Player {
-	for _, e := range es.Entities {
-		e, ok := e.(*Player)
-		if ok {
-			return e
-		}
+// NewECS returns an initialized ECS structure.
+func NewECS() *ECS {
+	return &ECS{
+		Positions: map[int]gruid.Point{},
 	}
-	return nil
+}
+
+// Add adds a new entity at a given position and returns its index/id.
+func (es *ECS) AddEntity(e Entity, p gruid.Point) int {
+	i := len(es.Entities)
+	es.Entities = append(es.Entities, e)
+	es.Positions[i] = p
+	return i
+}
+
+// MoveEntity moves the i-th entity to p.
+func (es *ECS) MoveEntity(i int, p gruid.Point) {
+	es.Positions[i] = p
+}
+
+// MovePlayer moves the player entity to p.
+func (es *ECS) MovePlayer(p gruid.Point) {
+	es.MoveEntity(es.PlayerID, p)
+}
+
+// Player returns the Player entity. Just a shorthand for easily accessing the
+// Player entity.
+func (es *ECS) Player() *Player {
+	return es.Entities[es.PlayerID].(*Player) // index 0 for player entity (convention)
 }
 
 // Entity represents an object or creature on the map.
 type Entity interface {
-	Pos() gruid.Point   // the position of the entity
 	Rune() rune         // the character representing the entity
 	Color() gruid.Color // the character's color
 }
 
 // Player contains information relevant to the player. It implements the Entity
-// interface.
-type Player struct {
-	P gruid.Point // position on the map
-}
-
-func (p *Player) Pos() gruid.Point {
-	return p.P
-}
+// interface. Empty for now, but in next parts it will information like HP.
+type Player struct{}
 
 func (p *Player) Rune() rune {
 	return '@'
@@ -142,7 +151,7 @@ adapt to the new code for the map and entities.
 
 ``` diff
 diff --git a/actions.go b/actions.go
-index 52e46a0..4e97bfb 100644
+index 52e46a0..5b9db72 100644
 --- a/actions.go
 +++ b/actions.go
 @@ -23,7 +23,11 @@ const (
@@ -150,16 +159,16 @@ index 52e46a0..4e97bfb 100644
  	switch m.action.Type {
  	case ActionMovement:
 -		m.game.PlayerPos = m.game.PlayerPos.Add(m.action.Delta)
-+		player := m.game.ECS.Player()
-+		np := player.P.Add(m.action.Delta)
++		np := m.game.ECS.Positions[m.game.ECS.PlayerID]
++		np = np.Add(m.action.Delta)
 +		if m.game.Map.Walkable(np) {
-+			player.P = np
++			m.game.ECS.MovePlayer(np)
 +		}
  	case ActionQuit:
  		// for now, just terminate with gruid End command: this will
  		// have to be updated later when implementing saving.
 diff --git a/model.go b/model.go
-index 21ee8aa..1f774dd 100644
+index 21ee8aa..476b60e 100644
 --- a/model.go
 +++ b/model.go
 @@ -4,7 +4,9 @@
@@ -193,9 +202,9 @@ index 21ee8aa..1f774dd 100644
 +		size := m.grid.Size() // map size: for now the whole window
 +		m.game.Map = NewMap(size)
 +		// Initialize entities
-+		m.game.ECS = &ECS{}
++		m.game.ECS = NewECS()
 +		// Initialization: create a player entity centered on the map.
-+		m.game.ECS.AddEntity(&Player{P: size.Div(2)})
++		m.game.ECS.PlayerID = m.game.ECS.AddEntity(&Player{}, size.Div(2))
  	case gruid.MsgKeyDown:
  		// Update action information on key down.
  		m.updateMsgKeyDown(msg)
@@ -217,8 +226,8 @@ index 21ee8aa..1f774dd 100644
 +		m.grid.Set(it.P(), gruid.Cell{Rune: m.game.Map.Rune(it.Cell())})
 +	}
 +	// We draw the entities.
-+	for _, e := range m.game.ECS.Entities {
-+		m.grid.Set(e.Pos(), gruid.Cell{
++	for i, e := range m.game.ECS.Entities {
++		m.grid.Set(m.game.ECS.Positions[i], gruid.Cell{
 +			Rune:  e.Rune(),
 +			Style: gruid.Style{Fg: e.Color()},
 +		})
