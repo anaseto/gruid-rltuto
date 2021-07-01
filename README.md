@@ -10,6 +10,7 @@ TCOD.
 
 * [Part 0 & 1](https://github.com/anaseto/gruid-rltuto/tree/part-1) - Setting Up & Drawing the “@” symbol and moving it around
 * [Part 2](https://github.com/anaseto/gruid-rltuto/tree/part-2) - Generic entities and the map
+* [Part 3](https://github.com/anaseto/gruid-rltuto/tree/part-3) - Generating a Dungeon
 
 ## Tips & Remarks
 
