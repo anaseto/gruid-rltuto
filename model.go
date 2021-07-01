@@ -6,12 +6,13 @@ package main
 
 import (
 	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/paths"
 )
 
 // model represents our main application's state.
 type model struct {
 	grid   gruid.Grid // drawing grid
-	game   game       // game state
+	game   *game      // game state
 	action action     // UI action
 }
 
@@ -27,6 +28,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	m.action = action{} // reset last action information
 	switch msg := msg.(type) {
 	case gruid.MsgInit:
+		m.game = &game{}
 		// Initialize map
 		size := m.grid.Size() // map size: for now the whole window
 		m.game.Map = NewMap(size)
@@ -34,7 +36,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		m.game.ECS = NewECS()
 		// Initialization: create a player entity centered on the map.
 		m.game.ECS.PlayerID = m.game.ECS.AddEntity(NewPlayer(), m.game.Map.RandomFloor())
-		m.UpdateFOV()
+		m.game.UpdateFOV()
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -70,22 +72,26 @@ const (
 // grid.
 func (m *model) Draw() gruid.Grid {
 	m.grid.Fill(gruid.Cell{Rune: ' '})
+	g := m.game
+	// player position
+	pp := g.ECS.Positions[g.ECS.PlayerID]
 	// We draw the map tiles.
-	it := m.game.Map.Grid.Iterator()
+	it := g.Map.Grid.Iterator()
 	for it.Next() {
-		if !m.game.Map.Explored[it.P()] {
+		if !g.Map.Explored[it.P()] {
 			continue
 		}
-		c := gruid.Cell{Rune: m.game.Map.Rune(it.Cell())}
-		if m.game.ECS.Player().FOV.Visible(it.P()) {
+		c := gruid.Cell{Rune: g.Map.Rune(it.Cell())}
+		if g.ECS.Player().FOV.Visible(it.P()) &&
+			paths.DistanceManhattan(pp, it.P()) <= maxLOS {
 			c.Style.Bg = ColorFOV
 		}
 		m.grid.Set(it.P(), c)
 	}
 	// We draw the entities.
-	for i, e := range m.game.ECS.Entities {
-		p := m.game.ECS.Positions[i]
-		if !m.game.Map.Explored[p] {
+	for i, e := range g.ECS.Entities {
+		p := g.ECS.Positions[i]
+		if !g.Map.Explored[p] {
 			continue
 		}
 		c := m.grid.At(p)
