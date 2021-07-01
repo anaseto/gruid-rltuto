@@ -228,3 +228,7 @@ index 21ee8aa..476b60e 100644
  	return m.grid
  }
 ```
+
+* * *
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-3)
