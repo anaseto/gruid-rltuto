@@ -28,7 +28,7 @@ in which to place the player.
 
 Also, because cellular automata generation does not guarantee a connected
 result, we use the paths package to find a connected component using the `CCMap`
-method of the `PathRange` type, and then `KeepCC` to keep only on connected
+method of the `PathRange` type, and then `KeepCC` to keep only one connected
 component. For this, we need to define a `path` type satisfying the `Pather`
 interface which provides means to find neighbors of a map cell.
 
