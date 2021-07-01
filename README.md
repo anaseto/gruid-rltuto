@@ -29,6 +29,7 @@ locally the tutorial's repository to explore:
 ``` sh
 # Clone the repository in a new directory gruid-rltuto:
 git clone https://github.com/anaseto/gruid-rltuto
+cd gruid-rltuto
 # You can then use git on the command line to switch between parts:
 git checkout part-1
 # View changes between parts:
