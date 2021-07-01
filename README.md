@@ -33,11 +33,10 @@ git clone https://github.com/anaseto/gruid-rltuto
 cd gruid-rltuto
 # You can then use git on the command line to switch between parts:
 git checkout part-1
-# View changes between parts:
-git diff part-1..part-2
+# View code changes between two parts:
+git diff part-1..part-2 *.go
+# View changes between two parts for a specific file:
+git diff part-1..part-2 model.go
 # Run the code of the current branch "part-1":
 go run .
 ```
-
-*Note*: a caveat of this tutorial branch-based and README approach is that
-README changes show up in the diffs - you should ignore them.
