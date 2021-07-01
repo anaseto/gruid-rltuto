@@ -60,3 +60,7 @@ We perform three steps:
 You can then test the game for example by running `go run .` on the tutorial's
 directory.  This may take a while the first time, as Go library dependencies
 will be downloaded and installed.
+
+* * *
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-2)
