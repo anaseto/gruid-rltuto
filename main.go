@@ -1,4 +1,4 @@
-// This is the main file of tutorial. It defines the main routine.
+// This is the main file of the tutorial. It defines the main routine.
 package main
 
 import (
@@ -25,7 +25,7 @@ func main() {
 		TileManager: t,
 	})
 
-	// Define new application using the SDL2 gruid driver and our model.
+	// Define a new application using the SDL2 gruid driver and our model.
 	app := gruid.NewApp(gruid.AppConfig{
 		Driver: dr,
 		Model:  m,
