@@ -8,7 +8,7 @@ import (
 	"github.com/anaseto/gruid"
 )
 
-// models represents our main application state.
+// model represents our main application's state.
 type model struct {
 	grid   gruid.Grid // drawing grid
 	game   game       // game state
