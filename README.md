@@ -39,6 +39,10 @@ clones the repository, and then you can check out a particular part:
 git checkout part-1 
 ```
 
+See the [Tips & Remarks](https://github.com/anaseto/gruid-rltuto#tips--remarks)
+section after the table of contents for more tips about using git along this
+tutorial.
+
 # Part 1 - Drawing the “@” symbol and moving it around
 
 In this part, we will draw a `@` symbol on a window, and move it in response to
