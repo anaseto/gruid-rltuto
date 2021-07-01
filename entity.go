@@ -45,7 +45,7 @@ func (es *ECS) MovePlayer(p gruid.Point) {
 // Player returns the Player entity. Just a shorthand for easily accessing the
 // Player entity.
 func (es *ECS) Player() *Player {
-	return es.Entities[es.PlayerID].(*Player) // index 0 for player entity (convention)
+	return es.Entities[es.PlayerID].(*Player)
 }
 
 // Entity represents an object or creature on the map.
