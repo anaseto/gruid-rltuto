@@ -61,14 +61,22 @@ func (m *Map) Generate() {
 		{WCutoff1: 5, WCutoff2: 2, Reps: 4, WallsOutOfRange: true},
 		{WCutoff1: 5, WCutoff2: 25, Reps: 3, WallsOutOfRange: true},
 	}
-	mgen.CellularAutomataCave(Wall, Floor, 0.42, rules)
-	freep := m.RandomFloor()
-	// We put walls in floor cells non reachable from freep, to ensure that
-	// all the cells are connected (which is not guaranteed by cellular
-	// automata map generation).
-	pr := paths.NewPathRange(m.Grid.Range())
-	pr.CCMap(&path{m: m}, freep)
-	mgen.KeepCC(pr, freep, Wall)
+	for {
+		mgen.CellularAutomataCave(Wall, Floor, 0.42, rules)
+		freep := m.RandomFloor()
+		// We put walls in floor cells non reachable from freep, to ensure that
+		// all the cells are connected (which is not guaranteed by cellular
+		// automata map generation).
+		pr := paths.NewPathRange(m.Grid.Range())
+		pr.CCMap(&path{m: m}, freep)
+		ntiles := mgen.KeepCC(pr, freep, Wall)
+		const minCaveSize = 400
+		if ntiles > minCaveSize {
+			break
+		}
+		// If there were not enough free tiles, we run the map
+		// generation again.
+	}
 }
 
 // RandomFloor returns a random floor cell in the map. It assumes that such a

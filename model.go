@@ -15,12 +15,6 @@ type model struct {
 	action action     // UI action
 }
 
-// game represents information relevant the current game's state.
-type game struct {
-	ECS *ECS // entities present on the map
-	Map *Map // the game map, made of tiles
-}
-
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
 // messages and updates the model in response to them.
 func (m *model) Update(msg gruid.Msg) gruid.Effect {
@@ -36,6 +30,8 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		// Initialization: create a player entity centered on the map.
 		m.game.ECS.PlayerID = m.game.ECS.AddEntity(NewPlayer(), m.game.Map.RandomFloor())
 		m.game.UpdateFOV()
+		// Add some monsters
+		m.game.SpawnMonsters()
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -60,11 +56,12 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 	}
 }
 
-// Color definitions. For now, we use a special color for FOV. We start from 1,
-// because 0 is gruid.ColorDefault, which we use for default foreground and
-// background.
+// Color definitions. We start from 1, because 0 is gruid.ColorDefault, which
+// we use for default foreground and background.
 const (
 	ColorFOV gruid.Color = iota + 1
+	ColorPlayer
+	ColorMonster
 )
 
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole

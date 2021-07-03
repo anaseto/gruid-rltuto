@@ -48,6 +48,28 @@ func (es *ECS) Player() *Player {
 	return es.Entities[es.PlayerID].(*Player)
 }
 
+// MonsterAt returns the Monster at p, if any, or nil if there is no monster at
+// p.
+func (es *ECS) MonsterAt(p gruid.Point) *Monster {
+	for i, q := range es.Positions {
+		if p != q {
+			continue
+		}
+		e := es.Entities[i]
+		switch e := e.(type) {
+		case *Monster:
+			return e
+		}
+	}
+	return nil
+}
+
+// NoBlockingEntityAt returns true if there is no blocking entity at p (no
+// player nor monsters in this tutorial).
+func (es *ECS) NoBlockingEntityAt(p gruid.Point) bool {
+	return es.Positions[es.PlayerID] != p && es.MonsterAt(p) == nil
+}
+
 // Entity represents an object or creature on the map.
 type Entity interface {
 	Rune() rune         // the character representing the entity
@@ -75,5 +97,20 @@ func (p *Player) Rune() rune {
 }
 
 func (p *Player) Color() gruid.Color {
-	return gruid.ColorDefault
+	return ColorPlayer
+}
+
+// Monster represents a monster. It implements the Entity interface. For now,
+// we simply give it a name and a rune for its graphical representation.
+type Monster struct {
+	Name string
+	Char rune
+}
+
+func (m *Monster) Rune() rune {
+	return m.Char
+}
+
+func (m *Monster) Color() gruid.Color {
+	return ColorMonster
 }

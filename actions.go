@@ -3,6 +3,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
 )
@@ -36,9 +38,16 @@ func (m *model) handleAction() gruid.Effect {
 	return nil
 }
 
-// MovePlayer moves the player to a given position and updates FOV information.
+// MovePlayer moves the player to a given position and updates FOV information,
+// or attacks if there is a monster.
 func (g *game) MovePlayer(to gruid.Point) {
 	if !g.Map.Walkable(to) {
+		return
+	}
+	if m := g.ECS.MonsterAt(to); m != nil {
+		// We show a message to standard error. Later in the tutorial,
+		// we'll put a message in the UI instead.
+		log.Printf("You kick the %s, much to its annoyance!\n", m.Name)
 		return
 	}
 	// We move the player to the new destination.

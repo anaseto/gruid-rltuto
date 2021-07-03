@@ -34,6 +34,12 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 	case ColorFOV:
 		bg = image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
 	}
+	switch c.Style.Fg {
+	case ColorPlayer:
+		fg = image.NewUniform(color.RGBA{0x46, 0x95, 0xf7, 255})
+	case ColorMonster:
+		fg = image.NewUniform(color.RGBA{0xfa, 0x57, 0x50, 255})
+	}
 	// We return an image with the given rune drawn using the previously
 	// defined foreground and background colors.
 	return t.drawer.Draw(c.Rune, fg, bg)
