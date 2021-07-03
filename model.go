@@ -6,7 +6,6 @@ package main
 
 import (
 	"github.com/anaseto/gruid"
-	"github.com/anaseto/gruid/paths"
 )
 
 // model represents our main application's state.
@@ -73,8 +72,6 @@ const (
 func (m *model) Draw() gruid.Grid {
 	m.grid.Fill(gruid.Cell{Rune: ' '})
 	g := m.game
-	// player position
-	pp := g.ECS.Positions[g.ECS.PlayerID]
 	// We draw the map tiles.
 	it := g.Map.Grid.Iterator()
 	for it.Next() {
@@ -82,8 +79,7 @@ func (m *model) Draw() gruid.Grid {
 			continue
 		}
 		c := gruid.Cell{Rune: g.Map.Rune(it.Cell())}
-		if g.ECS.Player().FOV.Visible(it.P()) &&
-			paths.DistanceManhattan(pp, it.P()) <= maxLOS {
+		if g.InFOV(it.P()) {
 			c.Style.Bg = ColorFOV
 		}
 		m.grid.Set(it.P(), c)
@@ -91,7 +87,7 @@ func (m *model) Draw() gruid.Grid {
 	// We draw the entities.
 	for i, e := range g.ECS.Entities {
 		p := g.ECS.Positions[i]
-		if !g.Map.Explored[p] {
+		if !g.Map.Explored[p] || !g.InFOV(p) {
 			continue
 		}
 		c := m.grid.At(p)

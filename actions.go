@@ -70,3 +70,13 @@ func (g *game) UpdateFOV() {
 		}
 	}
 }
+
+// InFOV returns true if p is in the player's field of view. We only keep cells
+// within maxLOS manhattan distance from the player, as natural given our
+// current 4-way movement. With 8-way movement, the natural distance choice
+// would be the Chebyshev one.
+func (g *game) InFOV(p gruid.Point) bool {
+	pp := g.ECS.Positions[g.ECS.PlayerID]
+	return g.ECS.Player().FOV.Visible(p) &&
+		paths.DistanceManhattan(pp, p) <= maxLOS
+}
