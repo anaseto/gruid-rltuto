@@ -12,24 +12,24 @@ import (
 // action represents information relevant to the last UI action performed.
 type action struct {
 	Type  actionType  // kind of action (movement, quitting, ...)
-	Delta gruid.Point // direction for ActionMovement
+	Delta gruid.Point // direction for ActionBump
 }
 
 type actionType int
 
 // These constants represent the possible UI actions.
 const (
-	NoAction       actionType = iota
-	ActionMovement            // movement request
-	ActionQuit                // quit the game
+	NoAction   actionType = iota
+	ActionBump            // bump request (attack or movement)
+	ActionQuit            // quit the game
 )
 
 // handleAction updates the model in response to current recorded last action.
 func (m *model) handleAction() gruid.Effect {
 	switch m.action.Type {
-	case ActionMovement:
+	case ActionBump:
 		np := m.game.ECS.Positions[m.game.ECS.PlayerID].Add(m.action.Delta)
-		m.game.MovePlayer(np)
+		m.game.Bump(np)
 	case ActionQuit:
 		// for now, just terminate with gruid End command: this will
 		// have to be updated later when implementing saving.
@@ -38,9 +38,9 @@ func (m *model) handleAction() gruid.Effect {
 	return nil
 }
 
-// MovePlayer moves the player to a given position and updates FOV information,
+// Bump moves the player to a given position and updates FOV information,
 // or attacks if there is a monster.
-func (g *game) MovePlayer(to gruid.Point) {
+func (g *game) Bump(to gruid.Point) {
 	if !g.Map.Walkable(to) {
 		return
 	}
