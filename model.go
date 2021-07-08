@@ -44,13 +44,13 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 	pdelta := gruid.Point{}
 	switch msg.Key {
 	case gruid.KeyArrowLeft, "h":
-		m.action = action{Type: ActionMovement, Delta: pdelta.Shift(-1, 0)}
+		m.action = action{Type: ActionBump, Delta: pdelta.Shift(-1, 0)}
 	case gruid.KeyArrowDown, "j":
-		m.action = action{Type: ActionMovement, Delta: pdelta.Shift(0, 1)}
+		m.action = action{Type: ActionBump, Delta: pdelta.Shift(0, 1)}
 	case gruid.KeyArrowUp, "k":
-		m.action = action{Type: ActionMovement, Delta: pdelta.Shift(0, -1)}
+		m.action = action{Type: ActionBump, Delta: pdelta.Shift(0, -1)}
 	case gruid.KeyArrowRight, "l":
-		m.action = action{Type: ActionMovement, Delta: pdelta.Shift(1, 0)}
+		m.action = action{Type: ActionBump, Delta: pdelta.Shift(1, 0)}
 	case gruid.KeyEscape, "q":
 		m.action = action{Type: ActionQuit}
 	}
