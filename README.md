@@ -98,8 +98,8 @@ index 4c24767..68539cf 100644
 The main changes are in file `actions.go`. We create a new `MovePlayer` method
 for the model's `game`, that will handle both moving the player (if possible),
 and then update the FOV and explored tiles. Further in the tutorial, when we
-implement monster turns (they just keep still for now) and other actions, we'll
-extend this to update FOV when needed.
+implement monster turns and other actions, we'll extend this to update FOV when
+needed.
 
 ``` diff
 diff --git a/actions.go b/actions.go
