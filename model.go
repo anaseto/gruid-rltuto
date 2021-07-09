@@ -6,6 +6,7 @@ package main
 
 import (
 	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/paths"
 )
 
 // model represents our main application's state.
@@ -25,10 +26,15 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		// Initialize map
 		size := m.grid.Size() // map size: for now the whole window
 		m.game.Map = NewMap(size)
+		m.game.PR = paths.NewPathRange(gruid.NewRange(0, 0, size.X, size.Y))
 		// Initialize entities
 		m.game.ECS = NewECS()
 		// Initialization: create a player entity centered on the map.
 		m.game.ECS.PlayerID = m.game.ECS.AddEntity(NewPlayer(), m.game.Map.RandomFloor())
+		m.game.ECS.Fighter[m.game.ECS.PlayerID] = &fighter{
+			HP: 30, MaxHP: 30, Power: 5, Defense: 2,
+		}
+		m.game.ECS.Name[m.game.ECS.PlayerID] = "you"
 		m.game.UpdateFOV()
 		// Add some monsters
 		m.game.SpawnMonsters()
@@ -88,8 +94,14 @@ func (m *model) Draw() gruid.Grid {
 			continue
 		}
 		c := m.grid.At(p)
-		c.Rune = e.Rune()
-		c.Style.Fg = e.Color()
+		if g.ECS.Dead(i) {
+			if c.Rune == '.' {
+				c.Rune = '%'
+			}
+		} else {
+			c.Rune = e.Rune()
+			c.Style.Fg = e.Color()
+		}
 		m.grid.Set(p, c)
 		// NOTE: We retrieved current cell at e.Pos() to preserve
 		// background (in FOV or not).
