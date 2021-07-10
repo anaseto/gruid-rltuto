@@ -95,6 +95,47 @@ func (es *ECS) Dead(i int) bool {
 	return fi != nil && fi.HP <= 0
 }
 
+// Style returns the graphical representation (rune and foreground color) of an
+// entity.
+func (es *ECS) Style(i int) (r rune, c gruid.Color) {
+	r = es.Entities[i].Rune()
+	c = es.Entities[i].Color()
+	if es.Dead(i) {
+		// Alternate representation for corpses of dead monsters.
+		r = '%'
+		c = gruid.ColorDefault
+	}
+	return r, c
+}
+
+// renderOrder is a type representing the priority of an entity rendering.
+type renderOrder int
+
+// Those constants represent distinct kinds of rendering priorities. In case
+// two entities are at a given position, only the one with the highest priority
+// gets displayed.
+const (
+	RONone renderOrder = iota
+	ROCorpse
+	ROItem
+	ROActor
+)
+
+// RenderOrder returns the rendering priority of an entity.
+func (es *ECS) RenderOrder(i int) (ro renderOrder) {
+	switch es.Entities[i].(type) {
+	case *Player:
+		ro = ROActor
+	case *Monster:
+		if es.Dead(i) {
+			ro = ROCorpse
+		} else {
+			ro = ROActor
+		}
+	}
+	return ro
+}
+
 // Entity represents an object or creature on the map.
 type Entity interface {
 	Rune() rune         // the character representing the entity

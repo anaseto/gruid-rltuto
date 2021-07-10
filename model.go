@@ -5,6 +5,8 @@
 package main
 
 import (
+	"sort"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
 )
@@ -87,21 +89,22 @@ func (m *model) Draw() gruid.Grid {
 		}
 		m.grid.Set(it.P(), c)
 	}
-	// We draw the entities.
-	for i, e := range g.ECS.Entities {
+	// We sort entity indexes using the render ordering.
+	sortedEntities := make([]int, 0, len(g.ECS.Entities))
+	for i := range g.ECS.Entities {
+		sortedEntities = append(sortedEntities, i)
+	}
+	sort.Slice(sortedEntities, func(i, j int) bool {
+		return g.ECS.RenderOrder(sortedEntities[i]) < g.ECS.RenderOrder(sortedEntities[j])
+	})
+	// We draw the sorted entities.
+	for _, i := range sortedEntities {
 		p := g.ECS.Positions[i]
 		if !g.Map.Explored[p] || !g.InFOV(p) {
 			continue
 		}
 		c := m.grid.At(p)
-		if g.ECS.Dead(i) {
-			if c.Rune == '.' {
-				c.Rune = '%'
-			}
-		} else {
-			c.Rune = e.Rune()
-			c.Style.Fg = e.Color()
-		}
+		c.Rune, c.Style.Fg = g.ECS.Style(i)
 		m.grid.Set(p, c)
 		// NOTE: We retrieved current cell at e.Pos() to preserve
 		// background (in FOV or not).
