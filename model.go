@@ -59,6 +59,8 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 		m.action = action{Type: ActionBump, Delta: pdelta.Shift(0, -1)}
 	case gruid.KeyArrowRight, "l":
 		m.action = action{Type: ActionBump, Delta: pdelta.Shift(1, 0)}
+	case gruid.KeyEnter, ".":
+		m.action = action{Type: ActionWait}
 	case gruid.KeyEscape, "q":
 		m.action = action{Type: ActionQuit}
 	}
