@@ -26,10 +26,6 @@ const (
 
 // handleAction updates the model in response to current recorded last action.
 func (m *model) handleAction() gruid.Effect {
-	if m.game.ECS.PlayerDied() {
-		log.Print("You died")
-		return gruid.End()
-	}
 	switch m.action.Type {
 	case ActionBump:
 		np := m.game.ECS.Positions[m.game.ECS.PlayerID].Add(m.action.Delta)
@@ -39,6 +35,10 @@ func (m *model) handleAction() gruid.Effect {
 	case ActionQuit:
 		// for now, just terminate with gruid End command: this will
 		// have to be updated later when implementing saving.
+		return gruid.End()
+	}
+	if m.game.ECS.PlayerDied() {
+		log.Print("You died")
 		return gruid.End()
 	}
 	return nil
