@@ -141,3 +141,7 @@ index 84e6d5b..dd12d97 100644
  		// Update action information on key down.
  		m.updateMsgKeyDown(msg)
 ```
+
+* * *
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-4)
