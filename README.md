@@ -208,7 +208,7 @@ appropiate values.
 Note that no changes were necessary in the `Draw` method, because it already
 handles any kind of entities.
 
-```
+``` diff
 diff --git a/map.go b/map.go
 index 68539cf..6f021bc 100644
 --- a/map.go
