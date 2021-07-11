@@ -8,7 +8,7 @@ TCOD.
 
 [Table of Contents](https://github.com/anaseto/gruid-rltuto)
 
-# Part 4
+# Part 4 - Field of View
 
 In this part, we implement a field of view for the player. We use the symmetric
 shadow casting provided by gruid rl's package, inspired from [this
