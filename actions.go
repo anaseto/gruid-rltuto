@@ -3,8 +3,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/anaseto/gruid"
 )
 
@@ -38,8 +36,9 @@ func (m *model) handleAction() gruid.Effect {
 		return gruid.End()
 	}
 	if m.game.ECS.PlayerDied() {
-		log.Print("You died")
-		return gruid.End()
+		m.game.Logf("You died -- press “q” or escape to quit", ColorLogSpecial)
+		m.mode = modeEnd
+		return nil
 	}
 	return nil
 }

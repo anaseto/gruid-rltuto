@@ -4,6 +4,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
 )
@@ -13,6 +16,7 @@ type game struct {
 	ECS *ECS             // entities present on the map
 	Map *Map             // the game map, made of tiles
 	PR  *paths.PathRange // path range for the map
+	Log []LogEntry       // log entries
 }
 
 // SpawnMonsters adds some monsters in the current map.
@@ -104,4 +108,22 @@ func (g *game) InFOV(p gruid.Point) bool {
 	pp := g.ECS.Positions[g.ECS.PlayerID]
 	return g.ECS.Player().FOV.Visible(p) &&
 		paths.DistanceManhattan(pp, p) <= maxLOS
+}
+
+// BumpAttack implements attack of a fighter entity on another.
+func (g *game) BumpAttack(i, j int) {
+	fi := g.ECS.Fighter[i]
+	fj := g.ECS.Fighter[j]
+	damage := fi.Power - fj.Defense
+	attackDesc := fmt.Sprintf("%s attacks %s", strings.Title(g.ECS.Name[i]), g.ECS.Name[j])
+	color := ColorLogMonsterAttack
+	if i == g.ECS.PlayerID {
+		color = ColorLogPlayerAttack
+	}
+	if damage > 0 {
+		g.Logf("%s for %d damage", color, attackDesc, damage)
+		fj.HP -= damage
+	} else {
+		g.Logf("%s but does no damage", color, attackDesc)
+	}
 }

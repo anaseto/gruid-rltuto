@@ -39,6 +39,12 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 		fg = image.NewUniform(color.RGBA{0x46, 0x95, 0xf7, 255})
 	case ColorMonster:
 		fg = image.NewUniform(color.RGBA{0xfa, 0x57, 0x50, 255})
+	case ColorLogPlayerAttack, ColorStatusHealthy:
+		fg = image.NewUniform(color.RGBA{0x75, 0xb9, 0x38, 255})
+	case ColorLogMonsterAttack, ColorStatusWounded:
+		fg = image.NewUniform(color.RGBA{0xed, 0x86, 0x49, 255})
+	case ColorLogSpecial:
+		fg = image.NewUniform(color.RGBA{0xf2, 0x75, 0xbe, 255})
 	}
 	// We return an image with the given rune drawn using the previously
 	// defined foreground and background colors.

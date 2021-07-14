@@ -9,6 +9,7 @@ import (
 
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
+	"github.com/anaseto/gruid/ui"
 )
 
 // model represents our main application's state.
@@ -16,17 +17,43 @@ type model struct {
 	grid   gruid.Grid // drawing grid
 	game   *game      // game state
 	action action     // UI action
+	mode   mode       // UI mode
+	log    *ui.Label  // label for log
+	status *ui.Label  // label for status
 }
+
+// mode describes distinct kinds of modes for the UI
+type mode int
+
+const (
+	modeNormal mode = iota
+	modeEnd         // win or death (currently only death)
+)
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
 // messages and updates the model in response to them.
 func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	m.action = action{} // reset last action information
+	switch m.mode {
+	case modeEnd:
+		switch msg := msg.(type) {
+		case gruid.MsgKeyDown:
+			switch msg.Key {
+			case "q", gruid.KeyEscape:
+				// You died: quit on "q" or "escape"
+				return gruid.End()
+			}
+		}
+		return nil
+	}
 	switch msg := msg.(type) {
 	case gruid.MsgInit:
+		m.log = &ui.Label{}
+		m.status = &ui.Label{}
 		m.game = &game{}
 		// Initialize map
-		size := m.grid.Size() // map size: for now the whole window
+		size := m.grid.Size()
+		size.Y -= 3 // for log and status
 		m.game.Map = NewMap(size)
 		m.game.PR = paths.NewPathRange(gruid.NewRange(0, 0, size.X, size.Y))
 		// Initialize entities
@@ -72,12 +99,18 @@ const (
 	ColorFOV gruid.Color = iota + 1
 	ColorPlayer
 	ColorMonster
+	ColorLogPlayerAttack
+	ColorLogMonsterAttack
+	ColorLogSpecial
+	ColorStatusHealthy
+	ColorStatusWounded
 )
 
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
 // grid.
 func (m *model) Draw() gruid.Grid {
 	m.grid.Fill(gruid.Cell{Rune: ' '})
+	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, 2, 0, -1))
 	g := m.game
 	// We draw the map tiles.
 	it := g.Map.Grid.Iterator()
@@ -89,7 +122,7 @@ func (m *model) Draw() gruid.Grid {
 		if g.InFOV(it.P()) {
 			c.Style.Bg = ColorFOV
 		}
-		m.grid.Set(it.P(), c)
+		mapgrid.Set(it.P(), c)
 	}
 	// We sort entity indexes using the render ordering.
 	sortedEntities := make([]int, 0, len(g.ECS.Entities))
@@ -105,11 +138,42 @@ func (m *model) Draw() gruid.Grid {
 		if !g.Map.Explored[p] || !g.InFOV(p) {
 			continue
 		}
-		c := m.grid.At(p)
+		c := mapgrid.At(p)
 		c.Rune, c.Style.Fg = g.ECS.Style(i)
-		m.grid.Set(p, c)
+		mapgrid.Set(p, c)
 		// NOTE: We retrieved current cell at e.Pos() to preserve
 		// background (in FOV or not).
 	}
+	m.DrawLog(m.grid.Slice(m.grid.Range().Lines(0, 2)))
+	m.DrawStatus(m.grid.Slice(m.grid.Range().Line(m.grid.Size().Y - 1)))
 	return m.grid
+}
+
+// DrawLog draws the last two lines of the log.
+func (m *model) DrawLog(gd gruid.Grid) {
+	j := 1
+	for i := len(m.game.Log) - 1; i >= 0; i-- {
+		if j < 0 {
+			break
+		}
+		e := m.game.Log[i]
+		st := gruid.Style{}
+		st.Fg = e.Color
+		m.log.Content = ui.NewStyledText(e.String(), st)
+		m.log.Draw(gd.Slice(gd.Range().Line(j)))
+		j--
+	}
+}
+
+// DrawStatus draws the status line
+func (m *model) DrawStatus(gd gruid.Grid) {
+	st := gruid.Style{}
+	st.Fg = ColorStatusHealthy
+	g := m.game
+	f := g.ECS.Fighter[g.ECS.PlayerID]
+	if f.HP < f.MaxHP/2 {
+		st.Fg = ColorStatusWounded
+	}
+	m.log.Content = ui.Textf("HP: %d/%d", f.HP, f.MaxHP).WithStyle(st)
+	m.log.Draw(gd)
 }
