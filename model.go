@@ -5,7 +5,10 @@
 package main
 
 import (
+	"fmt"
 	"sort"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
@@ -14,12 +17,15 @@ import (
 
 // model represents our main application's state.
 type model struct {
-	grid   gruid.Grid // drawing grid
-	game   *game      // game state
-	action action     // UI action
-	mode   mode       // UI mode
-	log    *ui.Label  // label for log
-	status *ui.Label  // label for status
+	grid     gruid.Grid  // drawing grid
+	game     *game       // game state
+	action   action      // UI action
+	mode     mode        // UI mode
+	log      *ui.Label   // label for log
+	status   *ui.Label   // label for status
+	desc     *ui.Label   // label for position description
+	viewer   *ui.Pager   // history viewer
+	mousePos gruid.Point // mouse position
 }
 
 // mode describes distinct kinds of modes for the UI
@@ -28,6 +34,7 @@ type mode int
 const (
 	modeNormal mode = iota
 	modeEnd         // win or death (currently only death)
+	modeHistoryViewer
 )
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -50,6 +57,8 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	case gruid.MsgInit:
 		m.log = &ui.Label{}
 		m.status = &ui.Label{}
+		m.desc = &ui.Label{Box: &ui.Box{}}
+		m.InitializeHistoryViewer()
 		m.game = &game{}
 		// Initialize map
 		size := m.grid.Size()
@@ -70,6 +79,10 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
+	case gruid.MsgMouse:
+		if msg.Action == gruid.MouseMove {
+			m.mousePos = msg.P
+		}
 	}
 	// Handle action (if any).
 	return m.handleAction()
@@ -144,6 +157,7 @@ func (m *model) Draw() gruid.Grid {
 		// NOTE: We retrieved current cell at e.Pos() to preserve
 		// background (in FOV or not).
 	}
+	m.DrawNames(mapgrid)
 	m.DrawLog(m.grid.Slice(m.grid.Range().Lines(0, 2)))
 	m.DrawStatus(m.grid.Slice(m.grid.Range().Line(m.grid.Size().Y - 1)))
 	return m.grid
@@ -176,4 +190,50 @@ func (m *model) DrawStatus(gd gruid.Grid) {
 	}
 	m.log.Content = ui.Textf("HP: %d/%d", f.HP, f.MaxHP).WithStyle(st)
 	m.log.Draw(gd)
+}
+
+// DrawNames renders the names of the named entities at current mouse location
+// if it is in the map.
+func (m *model) DrawNames(gd gruid.Grid) {
+	maprg := gruid.NewRange(0, 2, UIWidth, UIHeight-1)
+	if !m.mousePos.In(maprg) {
+		return
+	}
+	p := m.mousePos.Sub(gruid.Point{0, 2})
+	// We get the names of the entities at p.
+	names := []string{}
+	for i, q := range m.game.ECS.Positions {
+		if q != p {
+			continue
+		}
+		name, ok := m.game.ECS.Name[i]
+		if ok {
+			if m.game.ECS.Alive(i) {
+				names = append(names, name)
+			} else {
+				names = append(names, fmt.Sprintf("corpse", name))
+			}
+		}
+	}
+	if len(names) == 0 {
+		return
+	}
+	sort.Strings(names)
+
+	text := strings.Join(names, ", ")
+	width := utf8.RuneCountInString(text) + 2
+	rg := gruid.NewRange(p.X+1, p.Y-1, p.X+1+width, p.Y+2)
+	// we adjust a bit the box's placement in case it's on a edge.
+	if p.X+1+width >= UIWidth {
+		rg = rg.Shift(-1-width, 0, -1-width, 0)
+	}
+	if p.Y+2 > MapHeight {
+		rg = rg.Shift(0, -1, 0, -1)
+	}
+	if p.Y-1 < 0 {
+		rg = rg.Shift(0, 1, 0, 1)
+	}
+	slice := gd.Slice(rg)
+	m.desc.Content = ui.Text(text)
+	m.desc.Draw(slice)
 }

@@ -9,9 +9,16 @@ import (
 	sdl "github.com/anaseto/gruid-sdl"
 )
 
+const (
+	UIWidth   = 80
+	UIHeight  = 24
+	MapWidth  = UIWidth
+	MapHeight = UIHeight - 3
+)
+
 func main() {
 	// Create a new grid with standard 80x24 size.
-	gd := gruid.NewGrid(80, 24)
+	gd := gruid.NewGrid(UIWidth, UIHeight)
 	// Create the main application's model, using grid gd.
 	m := &model{grid: gd}
 	// Get a TileManager for drawing fonts on the screen.

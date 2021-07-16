@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/ui"
 )
 
 // LogEntry contains information about a log entry.
@@ -37,4 +38,12 @@ func (g *game) log(e LogEntry) {
 func (g *game) Logf(format string, color gruid.Color, a ...interface{}) {
 	e := LogEntry{Text: fmt.Sprintf(format, a...), Color: color}
 	g.log(e)
+}
+
+// InitializeHistoryViewer creates a new pager for viewing history.
+func (m *model) InitializeHistoryViewer() {
+	m.viewer = ui.NewPager(ui.PagerConfig{
+		Grid: gruid.NewGrid(UIWidth, UIHeight-1),
+		Box:  &ui.Box{},
+	})
 }
