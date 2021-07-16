@@ -4,6 +4,7 @@ package main
 
 import (
 	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/ui"
 )
 
 // action represents information relevant to the last UI action performed.
@@ -16,10 +17,11 @@ type actionType int
 
 // These constants represent the possible UI actions.
 const (
-	NoAction   actionType = iota
-	ActionBump            // bump request (attack or movement)
-	ActionWait            // wait a turn
-	ActionQuit            // quit the game
+	NoAction           actionType = iota
+	ActionBump                    // bump request (attack or movement)
+	ActionWait                    // wait a turn
+	ActionQuit                    // quit the game
+	ActionViewMessages            // view history messages
 )
 
 // handleAction updates the model in response to current recorded last action.
@@ -34,6 +36,15 @@ func (m *model) handleAction() gruid.Effect {
 		// for now, just terminate with gruid End command: this will
 		// have to be updated later when implementing saving.
 		return gruid.End()
+	case ActionViewMessages:
+		m.mode = modeMessageViewer
+		lines := []ui.StyledText{}
+		for _, e := range m.game.Log {
+			st := gruid.Style{}
+			st.Fg = e.Color
+			lines = append(lines, ui.NewStyledText(e.String(), st))
+		}
+		m.viewer.SetLines(lines)
 	}
 	if m.game.ECS.PlayerDied() {
 		m.game.Logf("You died -- press “q” or escape to quit", ColorLogSpecial)

@@ -5,7 +5,6 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -24,7 +23,7 @@ type model struct {
 	log      *ui.Label   // label for log
 	status   *ui.Label   // label for status
 	desc     *ui.Label   // label for position description
-	viewer   *ui.Pager   // history viewer
+	viewer   *ui.Pager   // message's history viewer
 	mousePos gruid.Point // mouse position
 }
 
@@ -34,7 +33,7 @@ type mode int
 const (
 	modeNormal mode = iota
 	modeEnd         // win or death (currently only death)
-	modeHistoryViewer
+	modeMessageViewer
 )
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -52,13 +51,19 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 			}
 		}
 		return nil
+	case modeMessageViewer:
+		m.viewer.Update(msg)
+		if m.viewer.Action() == ui.PagerQuit {
+			m.mode = modeNormal
+		}
+		return nil
 	}
 	switch msg := msg.(type) {
 	case gruid.MsgInit:
 		m.log = &ui.Label{}
 		m.status = &ui.Label{}
 		m.desc = &ui.Label{Box: &ui.Box{}}
-		m.InitializeHistoryViewer()
+		m.InitializeMessageViewer()
 		m.game = &game{}
 		// Initialize map
 		size := m.grid.Size()
@@ -72,7 +77,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		m.game.ECS.Fighter[m.game.ECS.PlayerID] = &fighter{
 			HP: 30, MaxHP: 30, Power: 5, Defense: 2,
 		}
-		m.game.ECS.Name[m.game.ECS.PlayerID] = "you"
+		m.game.ECS.Name[m.game.ECS.PlayerID] = "player"
 		m.game.UpdateFOV()
 		// Add some monsters
 		m.game.SpawnMonsters()
@@ -103,6 +108,8 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 		m.action = action{Type: ActionWait}
 	case gruid.KeyEscape, "q":
 		m.action = action{Type: ActionQuit}
+	case "m":
+		m.action = action{Type: ActionViewMessages}
 	}
 }
 
@@ -122,6 +129,10 @@ const (
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
 // grid.
 func (m *model) Draw() gruid.Grid {
+	if m.mode == modeMessageViewer {
+		m.grid.Copy(m.viewer.Draw())
+		return m.grid
+	}
 	m.grid.Fill(gruid.Cell{Rune: ' '})
 	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, 2, 0, -1))
 	g := m.game
@@ -203,7 +214,7 @@ func (m *model) DrawNames(gd gruid.Grid) {
 	// We get the names of the entities at p.
 	names := []string{}
 	for i, q := range m.game.ECS.Positions {
-		if q != p {
+		if q != p || !m.game.InFOV(q) {
 			continue
 		}
 		name, ok := m.game.ECS.Name[i]
@@ -211,13 +222,16 @@ func (m *model) DrawNames(gd gruid.Grid) {
 			if m.game.ECS.Alive(i) {
 				names = append(names, name)
 			} else {
-				names = append(names, fmt.Sprintf("corpse", name))
+				names = append(names, "corpse")
 			}
 		}
 	}
 	if len(names) == 0 {
 		return
 	}
+	// We sort the names. This could be improved to sort by entity type
+	// too, as well as to remove duplicates (for example showing “corpse
+	// (3x)” if there are three corpses).
 	sort.Strings(names)
 
 	text := strings.Join(names, ", ")

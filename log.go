@@ -40,8 +40,8 @@ func (g *game) Logf(format string, color gruid.Color, a ...interface{}) {
 	g.log(e)
 }
 
-// InitializeHistoryViewer creates a new pager for viewing history.
-func (m *model) InitializeHistoryViewer() {
+// InitializeHistoryViewer creates a new pager for viewing message's history.
+func (m *model) InitializeMessageViewer() {
 	m.viewer = ui.NewPager(ui.PagerConfig{
 		Grid: gruid.NewGrid(UIWidth, UIHeight-1),
 		Box:  &ui.Box{},
