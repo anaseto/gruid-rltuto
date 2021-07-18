@@ -574,3 +574,7 @@ index 1fd7adb..04e5fd3 100644
  		// NOTE: We retrieved current cell at e.Pos() to preserve
  		// background (in FOV or not).
 ```
+
+* * *
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-7)
