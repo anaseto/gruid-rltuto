@@ -4,6 +4,10 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"strings"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
 )
@@ -104,4 +108,18 @@ func (g *game) InFOV(p gruid.Point) bool {
 	pp := g.ECS.Positions[g.ECS.PlayerID]
 	return g.ECS.Player().FOV.Visible(p) &&
 		paths.DistanceManhattan(pp, p) <= maxLOS
+}
+
+// BumpAttack implements attack of a fighter entity on another.
+func (g *game) BumpAttack(i, j int) {
+	fi := g.ECS.Fighter[i]
+	fj := g.ECS.Fighter[j]
+	damage := fi.Power - fj.Defense
+	attackDesc := fmt.Sprintf("%s attacks %s", strings.Title(g.ECS.Name[i]), g.ECS.Name[j])
+	if damage > 0 {
+		log.Printf("%s for %d damage", attackDesc, damage)
+		fj.HP -= damage
+	} else {
+		log.Printf("%s but does no damage", attackDesc)
+	}
 }

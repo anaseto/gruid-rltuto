@@ -3,10 +3,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"strings"
-
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
 )
@@ -44,20 +40,6 @@ func (g *game) HandleMonsterTurn(i int) {
 	// reach the player.
 	ai.Path = g.PR.AstarPath(aip, p, pp)
 	g.AIMove(i)
-}
-
-// BumpAttack implements attack of a fighter entity on another.
-func (g *game) BumpAttack(i, j int) {
-	fi := g.ECS.Fighter[i]
-	fj := g.ECS.Fighter[j]
-	damage := fi.Power - fj.Defense
-	attackDesc := fmt.Sprintf("%s attacks %s", strings.Title(g.ECS.Name[i]), g.ECS.Name[j])
-	if damage > 0 {
-		log.Printf("%s for %d damage", attackDesc, damage)
-		fj.HP -= damage
-	} else {
-		log.Printf("%s but does no damage", attackDesc)
-	}
 }
 
 // AIMove moves a monster to the next position, if there is no blocking entity
