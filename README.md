@@ -13,6 +13,8 @@ TCOD.
 * [Part 3](https://github.com/anaseto/gruid-rltuto/tree/part-3) - Generating a Dungeon
 * [Part 4](https://github.com/anaseto/gruid-rltuto/tree/part-4) - Field of View
 * [Part 5](https://github.com/anaseto/gruid-rltuto/tree/part-5) - Placing enemies and kicking them (harmlessly)
+* [Part 6](https://github.com/anaseto/gruid-rltuto/tree/part-6) - Doing (and taking) some damage
+* [Part 7](https://github.com/anaseto/gruid-rltuto/tree/part-7) - Creating the Interface
 
 ## Tips & Remarks
 
@@ -42,3 +44,8 @@ git diff part-1..part-2 model.go
 # Run the code of the current branch "part-1":
 go run .
 ```
+
+*Note:* The code in this repository can be used under the same permissive
+license as gruid, or as a public domain work
+[CC0](https://creativecommons.org/publicdomain/zero/1.0/), as you prefer. In
+short, you can do whatever you want with it.
