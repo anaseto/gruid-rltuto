@@ -12,31 +12,50 @@ import (
 // (Entity-Component-System) in this tutorial, opting for a simpler hybrid
 // approach good enough for the tutorial purposes.
 type ECS struct {
-	Entities  []Entity            // list of entities
+	Entities  map[int]Entity      // set of entities
 	Positions map[int]gruid.Point // entity index: map position
 	PlayerID  int                 // index of Player's entity (for convenience)
+	NextID    int                 // next available id
 
-	Fighter map[int]*fighter // figthing component
-	AI      map[int]*AI      // AI component
-	Name    map[int]string   // name component
+	Fighter   map[int]*fighter   // figthing component
+	AI        map[int]*AI        // AI component
+	Name      map[int]string     // name component
+	DStyle    map[int]EStyle     // default style component
+	Inventory map[int]*Inventory // inventory component
 }
 
 // NewECS returns an initialized ECS structure.
 func NewECS() *ECS {
 	return &ECS{
+		Entities:  map[int]Entity{},
 		Positions: map[int]gruid.Point{},
 		Fighter:   map[int]*fighter{},
 		AI:        map[int]*AI{},
 		Name:      map[int]string{},
+		DStyle:    map[int]EStyle{},
+		Inventory: map[int]*Inventory{},
+		NextID:    0,
 	}
 }
 
 // Add adds a new entity at a given position and returns its index/id.
 func (es *ECS) AddEntity(e Entity, p gruid.Point) int {
-	i := len(es.Entities)
-	es.Entities = append(es.Entities, e)
-	es.Positions[i] = p
-	return i
+	id := es.NextID
+	es.Entities[id] = e
+	es.Positions[id] = p
+	es.NextID++
+	return id
+}
+
+// RemoveEntity removes an entity, given its identifier.
+func (es *ECS) RemoveEntity(i int) {
+	delete(es.Entities, i)
+	delete(es.Positions, i)
+	delete(es.Fighter, i)
+	delete(es.AI, i)
+	delete(es.Name, i)
+	delete(es.DStyle, i)
+	delete(es.Inventory, i)
 }
 
 // MoveEntity moves the i-th entity to p.
@@ -53,6 +72,11 @@ func (es *ECS) MovePlayer(p gruid.Point) {
 // Player entity.
 func (es *ECS) Player() *Player {
 	return es.Entities[es.PlayerID].(*Player)
+}
+
+// PP returns the Player's position. Just a convenience shorthand.
+func (es *ECS) PP() gruid.Point {
+	return es.Positions[es.PlayerID]
 }
 
 // MonsterAt returns the Monster at p along with its index, if any, or nil if
@@ -75,7 +99,7 @@ func (es *ECS) MonsterAt(p gruid.Point) (int, *Monster) {
 // player nor monsters in this tutorial).
 func (es *ECS) NoBlockingEntityAt(p gruid.Point) bool {
 	i, _ := es.MonsterAt(p)
-	return es.Positions[es.PlayerID] != p && !es.Alive(i)
+	return es.PP() != p && !es.Alive(i)
 }
 
 // PlayerDied checks whether the player died.
@@ -98,14 +122,24 @@ func (es *ECS) Dead(i int) bool {
 // Style returns the graphical representation (rune and foreground color) of an
 // entity.
 func (es *ECS) Style(i int) (r rune, c gruid.Color) {
-	r = es.Entities[i].Rune()
-	c = es.Entities[i].Color()
+	r = es.DStyle[i].Rune
+	c = es.DStyle[i].Color
 	if es.Dead(i) {
 		// Alternate representation for corpses of dead monsters.
 		r = '%'
 		c = gruid.ColorDefault
 	}
 	return r, c
+}
+
+// GetName returns the name of an entity, which most often is name given by the
+// Name component, except for corpses.
+func (es *ECS) GetName(i int) (s string) {
+	name := es.Name[i]
+	if es.Dead(i) {
+		name = "corpse"
+	}
+	return name
 }
 
 // renderOrder is a type representing the priority of an entity rendering.
@@ -132,18 +166,16 @@ func (es *ECS) RenderOrder(i int) (ro renderOrder) {
 		} else {
 			ro = ROActor
 		}
+	case *Consumable:
+		ro = ROItem
 	}
 	return ro
 }
 
 // Entity represents an object or creature on the map.
-type Entity interface {
-	Rune() rune         // the character representing the entity
-	Color() gruid.Color // the character's color
-}
+type Entity interface{}
 
-// Player contains information relevant to the player. It implements the Entity
-// interface.
+// Player contains information relevant to the player.
 type Player struct {
 	FOV *rl.FOV // player's field of view
 }
@@ -158,23 +190,5 @@ func NewPlayer() *Player {
 	return player
 }
 
-func (p *Player) Rune() rune {
-	return '@'
-}
-
-func (p *Player) Color() gruid.Color {
-	return ColorPlayer
-}
-
-// Monster represents a monster. It implements the Entity interface.
-type Monster struct {
-	Char rune // monster's graphical representation
-}
-
-func (m *Monster) Rune() rune {
-	return m.Char
-}
-
-func (m *Monster) Color() gruid.Color {
-	return ColorMonster
-}
+// Monster represents a monster.
+type Monster struct{}

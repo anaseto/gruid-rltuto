@@ -18,7 +18,7 @@ func (g *game) HandleMonsterTurn(i int) {
 	p := g.ECS.Positions[i]
 	ai := g.ECS.AI[i]
 	aip := &aiPath{g: g}
-	pp := g.ECS.Positions[g.ECS.PlayerID]
+	pp := g.ECS.PP()
 	if paths.DistanceManhattan(p, pp) == 1 {
 		// If the monster is adjacent to the player, attack.
 		g.BumpAttack(i, g.ECS.PlayerID)

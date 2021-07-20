@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -21,30 +22,36 @@ type game struct {
 
 // SpawnMonsters adds some monsters in the current map.
 func (g *game) SpawnMonsters() {
-	const numberOfMonsters = 6
+	const numberOfMonsters = 12
 	for i := 0; i < numberOfMonsters; i++ {
 		m := &Monster{}
 		// We generate either an orc or a troll with 0.8 and 0.2
 		// probabilities respectively.
+		const (
+			orc = iota
+			troll
+		)
+		kind := orc
 		switch {
 		case g.Map.Rand.Intn(100) < 80:
-			m.Char = 'o'
 		default:
-			m.Char = 'T'
+			kind = troll
 		}
 		p := g.FreeFloorTile()
 		i := g.ECS.AddEntity(m, p)
-		switch m.Char {
-		case 'o':
+		switch kind {
+		case orc:
 			g.ECS.Fighter[i] = &fighter{
 				HP: 10, MaxHP: 10, Defense: 0, Power: 3,
 			}
 			g.ECS.Name[i] = "orc"
-		case 'T':
+			g.ECS.DStyle[i] = EStyle{Rune: 'o', Color: ColorMonster}
+		case troll:
 			g.ECS.Fighter[i] = &fighter{
 				HP: 16, MaxHP: 16, Defense: 1, Power: 4,
 			}
 			g.ECS.Name[i] = "troll"
+			g.ECS.DStyle[i] = EStyle{Rune: 'T', Color: ColorMonster}
 		}
 		g.ECS.AI[i] = &AI{}
 	}
@@ -80,7 +87,7 @@ func (g *game) EndTurn() {
 func (g *game) UpdateFOV() {
 	player := g.ECS.Player()
 	// player position
-	pp := g.ECS.Positions[g.ECS.PlayerID]
+	pp := g.ECS.PP()
 	// We shift the FOV's Range so that it will be centered on the new
 	// player's position.
 	rg := gruid.NewRange(-maxLOS, -maxLOS, maxLOS+1, maxLOS+1)
@@ -105,7 +112,7 @@ func (g *game) UpdateFOV() {
 // current 4-way movement. With 8-way movement, the natural distance choice
 // would be the Chebyshev one.
 func (g *game) InFOV(p gruid.Point) bool {
-	pp := g.ECS.Positions[g.ECS.PlayerID]
+	pp := g.ECS.PP()
 	return g.ECS.Player().FOV.Visible(p) &&
 		paths.DistanceManhattan(pp, p) <= maxLOS
 }
@@ -126,4 +133,47 @@ func (g *game) BumpAttack(i, j int) {
 	} else {
 		g.Logf("%s but does no damage", color, attackDesc)
 	}
+}
+
+// PlaceItems adds items in the current map.
+func (g *game) PlaceItems() {
+	const numberOfPotions = 5
+	for i := 0; i < numberOfPotions; i++ {
+		p := g.FreeFloorTile()
+		id := g.ECS.AddEntity(&HealingPotion{Amount: 4}, p)
+		g.ECS.Name[id] = "health potion"
+		g.ECS.DStyle[id] = EStyle{Rune: '!', Color: ColorConsumable}
+	}
+}
+
+const ErrNoShow = "ErrNoShow"
+
+// IventoryAdd adds an item to the player's inventory, if there is room. It
+// returns an error if the item could not be added.
+func (g *game) InventoryAdd(i int) error {
+	const maxSize = 26
+	switch g.ECS.Entities[i].(type) {
+	case *Consumable:
+		inv := g.ECS.Inventory[g.ECS.PlayerID]
+		if len(inv.Items) >= maxSize {
+			return errors.New("Inventory is full.")
+		}
+		inv.Items = append(inv.Items, i)
+		delete(g.ECS.Positions, i)
+		return nil
+	}
+	return errors.New(ErrNoShow)
+}
+
+// Drop an item from the inventory.
+func (g *game) InventoryRemove(n int) error {
+	inv := g.ECS.Inventory[g.ECS.PlayerID]
+	if len(inv.Items) <= n {
+		return errors.New("Empty slot.")
+	}
+	i := inv.Items[n]
+	inv.Items[n] = inv.Items[len(inv.Items)-1]
+	inv.Items = inv.Items[:len(inv.Items)-1]
+	g.ECS.Positions[i] = g.ECS.PP()
+	return nil
 }

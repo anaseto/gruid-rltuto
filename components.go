@@ -13,7 +13,30 @@ type fighter struct {
 	Defense int // defence
 }
 
+// Heal heals a fighter for a certain amount, if it does not exceed maximum HP.
+// The final amount of healing is returned.
+func (fi *fighter) Heal(n int) int {
+	fi.HP += n
+	if fi.HP > fi.MaxHP {
+		n -= fi.HP - fi.MaxHP
+		fi.HP = fi.MaxHP
+	}
+	return n
+}
+
 // AI holds simple AI data for monster's.
 type AI struct {
 	Path []gruid.Point // path to destination
+}
+
+// EStyle contains information relative to the default graphical representation
+// of an entity.
+type EStyle struct {
+	Rune  rune
+	Color gruid.Color
+}
+
+// Inventory holds items. For now, consumables.
+type Inventory struct {
+	Items []int
 }

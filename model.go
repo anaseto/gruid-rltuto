@@ -77,10 +77,13 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		m.game.ECS.Fighter[m.game.ECS.PlayerID] = &fighter{
 			HP: 30, MaxHP: 30, Power: 5, Defense: 2,
 		}
+		m.game.ECS.DStyle[m.game.ECS.PlayerID] = EStyle{Rune: '@', Color: ColorPlayer}
 		m.game.ECS.Name[m.game.ECS.PlayerID] = "player"
 		m.game.UpdateFOV()
 		// Add some monsters
 		m.game.SpawnMonsters()
+		// Add items
+		m.game.PlaceItems()
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -124,6 +127,7 @@ const (
 	ColorLogSpecial
 	ColorStatusHealthy
 	ColorStatusWounded
+	ColorConsumable
 )
 
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
@@ -217,13 +221,9 @@ func (m *model) DrawNames(gd gruid.Grid) {
 		if q != p || !m.game.InFOV(q) {
 			continue
 		}
-		name, ok := m.game.ECS.Name[i]
-		if ok {
-			if m.game.ECS.Alive(i) {
-				names = append(names, name)
-			} else {
-				names = append(names, "corpse")
-			}
+		name := m.game.ECS.GetName(i)
+		if name != "" {
+			names = append(names, name)
 		}
 	}
 	if len(names) == 0 {

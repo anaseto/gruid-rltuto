@@ -28,7 +28,7 @@ const (
 func (m *model) handleAction() gruid.Effect {
 	switch m.action.Type {
 	case ActionBump:
-		np := m.game.ECS.Positions[m.game.ECS.PlayerID].Add(m.action.Delta)
+		np := m.game.ECS.PP().Add(m.action.Delta)
 		m.game.Bump(np)
 	case ActionWait:
 		m.game.EndTurn()
@@ -70,4 +70,24 @@ func (g *game) Bump(to gruid.Point) {
 	// We move the player to the new destination.
 	g.ECS.MovePlayer(to)
 	g.EndTurn()
+}
+
+// PickupItem takes an item on the floor.
+func (g *game) PickupItem() {
+	pp := g.ECS.PP()
+	for i, p := range g.ECS.Positions {
+		if p != pp {
+			continue
+		}
+		err := g.InventoryAdd(i)
+		if err != nil {
+			if err.Error() == ErrNoShow {
+				continue
+			}
+			g.Logf("Could not pickup: %v", ColorLogSpecial, err)
+			return
+		}
+		g.EndTurn()
+		return
+	}
 }
