@@ -19,6 +19,9 @@ type actionType int
 const (
 	NoAction           actionType = iota
 	ActionBump                    // bump request (attack or movement)
+	ActionDrop                    // menu to drop an inventory item
+	ActionInventory               // inventory menu to use an item
+	ActionPickup                  // pickup an item on the ground
 	ActionWait                    // wait a turn
 	ActionQuit                    // quit the game
 	ActionViewMessages            // view history messages
@@ -30,6 +33,14 @@ func (m *model) handleAction() gruid.Effect {
 	case ActionBump:
 		np := m.game.ECS.PP().Add(m.action.Delta)
 		m.game.Bump(np)
+	case ActionDrop:
+		m.OpenInventory("Drop item")
+		m.mode = modeInventoryDrop
+	case ActionInventory:
+		m.OpenInventory("Use item")
+		m.mode = modeInventoryActivate
+	case ActionPickup:
+		m.game.PickupItem()
 	case ActionWait:
 		m.game.EndTurn()
 	case ActionQuit:
@@ -77,17 +88,45 @@ func (g *game) PickupItem() {
 	pp := g.ECS.PP()
 	for i, p := range g.ECS.Positions {
 		if p != pp {
+			// Skip entities whose position is diffferent than the
+			// player's.
 			continue
 		}
-		err := g.InventoryAdd(i)
+		err := g.InventoryAdd(g.ECS.PlayerID, i)
 		if err != nil {
 			if err.Error() == ErrNoShow {
+				// Happens for example if the current entity is
+				// not a consumable.
 				continue
 			}
 			g.Logf("Could not pickup: %v", ColorLogSpecial, err)
 			return
 		}
+		g.Logf("You pickup %v", ColorLogItemUse, g.ECS.Name[i])
 		g.EndTurn()
 		return
 	}
+}
+
+// OpenInventory opens the inventory and allows the player to select an item.
+func (m *model) OpenInventory(title string) {
+	inv := m.game.ECS.Inventory[m.game.ECS.PlayerID]
+	// We build a list of entries.
+	entries := []ui.MenuEntry{}
+	r := 'a'
+	for _, it := range inv.Items {
+		name := m.game.ECS.Name[it]
+		entries = append(entries, ui.MenuEntry{
+			Text: ui.Text(string(r) + " - " + name),
+			// allow to use the character r to select the entry
+			Keys: []gruid.Key{gruid.Key(r)},
+		})
+		r++
+	}
+	// We create a new menu widget for the inventory window.
+	m.inventory = ui.NewMenu(ui.MenuConfig{
+		Grid:    gruid.NewGrid(40, MapHeight),
+		Box:     &ui.Box{Title: ui.Text(title)},
+		Entries: entries,
+	})
 }

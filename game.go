@@ -150,11 +150,11 @@ const ErrNoShow = "ErrNoShow"
 
 // IventoryAdd adds an item to the player's inventory, if there is room. It
 // returns an error if the item could not be added.
-func (g *game) InventoryAdd(i int) error {
+func (g *game) InventoryAdd(actor, i int) error {
 	const maxSize = 26
 	switch g.ECS.Entities[i].(type) {
-	case *Consumable:
-		inv := g.ECS.Inventory[g.ECS.PlayerID]
+	case Consumable:
+		inv := g.ECS.Inventory[actor]
 		if len(inv.Items) >= maxSize {
 			return errors.New("Inventory is full.")
 		}
@@ -166,8 +166,8 @@ func (g *game) InventoryAdd(i int) error {
 }
 
 // Drop an item from the inventory.
-func (g *game) InventoryRemove(n int) error {
-	inv := g.ECS.Inventory[g.ECS.PlayerID]
+func (g *game) InventoryRemove(actor, n int) error {
+	inv := g.ECS.Inventory[actor]
 	if len(inv.Items) <= n {
 		return errors.New("Empty slot.")
 	}
@@ -175,5 +175,27 @@ func (g *game) InventoryRemove(n int) error {
 	inv.Items[n] = inv.Items[len(inv.Items)-1]
 	inv.Items = inv.Items[:len(inv.Items)-1]
 	g.ECS.Positions[i] = g.ECS.PP()
+	return nil
+}
+
+// InventoryActivate uses a given item from the inventory.
+func (g *game) InventoryActivate(actor, n int) error {
+	inv := g.ECS.Inventory[actor]
+	if len(inv.Items) <= n {
+		return errors.New("Empty slot.")
+	}
+	i := inv.Items[n]
+	switch e := g.ECS.Entities[i].(type) {
+	case Consumable:
+		err := e.Activate(g, itemAction{Actor: actor})
+		if err != nil {
+			return err
+		}
+	}
+	// Put the last item on the previous one: this could be improved,
+	// sorting elements in a certain way, or moving elements as necessary
+	// to preserve current order.
+	inv.Items[n] = inv.Items[len(inv.Items)-1]
+	inv.Items = inv.Items[:len(inv.Items)-1]
 	return nil
 }

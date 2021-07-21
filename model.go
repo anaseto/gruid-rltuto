@@ -16,15 +16,16 @@ import (
 
 // model represents our main application's state.
 type model struct {
-	grid     gruid.Grid  // drawing grid
-	game     *game       // game state
-	action   action      // UI action
-	mode     mode        // UI mode
-	log      *ui.Label   // label for log
-	status   *ui.Label   // label for status
-	desc     *ui.Label   // label for position description
-	viewer   *ui.Pager   // message's history viewer
-	mousePos gruid.Point // mouse position
+	grid      gruid.Grid  // drawing grid
+	game      *game       // game state
+	action    action      // UI action
+	mode      mode        // UI mode
+	log       *ui.Label   // label for log
+	status    *ui.Label   // label for status
+	desc      *ui.Label   // label for position description
+	inventory *ui.Menu    // inventory menu
+	viewer    *ui.Pager   // message's history viewer
+	mousePos  gruid.Point // mouse position
 }
 
 // mode describes distinct kinds of modes for the UI
@@ -33,6 +34,8 @@ type mode int
 const (
 	modeNormal mode = iota
 	modeEnd         // win or death (currently only death)
+	modeInventoryActivate
+	modeInventoryDrop
 	modeMessageViewer
 )
 
@@ -57,6 +60,9 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 			m.mode = modeNormal
 		}
 		return nil
+	case modeInventoryActivate, modeInventoryDrop:
+		m.updateInventory(msg)
+		return nil
 	}
 	switch msg := msg.(type) {
 	case gruid.MsgInit:
@@ -79,6 +85,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		}
 		m.game.ECS.DStyle[m.game.ECS.PlayerID] = EStyle{Rune: '@', Color: ColorPlayer}
 		m.game.ECS.Name[m.game.ECS.PlayerID] = "player"
+		m.game.ECS.Inventory[m.game.ECS.PlayerID] = &Inventory{}
 		m.game.UpdateFOV()
 		// Add some monsters
 		m.game.SpawnMonsters()
@@ -94,6 +101,36 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	}
 	// Handle action (if any).
 	return m.handleAction()
+}
+
+// updateInventory handles input messages when the inventory window is open.
+func (m *model) updateInventory(msg gruid.Msg) {
+	// We call the Update function of the menu widget, so that we can
+	// inspect information about user activity on the menu.
+	m.inventory.Update(msg)
+	switch m.inventory.Action() {
+	case ui.MenuQuit:
+		// The user requested to quit the menu.
+		m.mode = modeNormal
+		return
+	case ui.MenuInvoke:
+		// The user invoked a particular entry of the menu (either by
+		// using enter or clicking on it).
+		n := m.inventory.Active()
+		var err error
+		switch m.mode {
+		case modeInventoryDrop:
+			err = m.game.InventoryRemove(m.game.ECS.PlayerID, n)
+		case modeInventoryActivate:
+			err = m.game.InventoryActivate(m.game.ECS.PlayerID, n)
+		}
+		if err != nil {
+			m.game.Logf("%v", ColorLogSpecial, err)
+		} else {
+			m.game.EndTurn()
+		}
+		m.mode = modeNormal
+	}
 }
 
 func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
@@ -113,6 +150,12 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 		m.action = action{Type: ActionQuit}
 	case "m":
 		m.action = action{Type: ActionViewMessages}
+	case "i":
+		m.action = action{Type: ActionInventory}
+	case "d":
+		m.action = action{Type: ActionDrop}
+	case "g":
+		m.action = action{Type: ActionPickup}
 	}
 }
 
@@ -123,6 +166,7 @@ const (
 	ColorPlayer
 	ColorMonster
 	ColorLogPlayerAttack
+	ColorLogItemUse
 	ColorLogMonsterAttack
 	ColorLogSpecial
 	ColorStatusHealthy
@@ -133,12 +177,16 @@ const (
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
 // grid.
 func (m *model) Draw() gruid.Grid {
-	if m.mode == modeMessageViewer {
+	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, 2, 0, -1))
+	switch m.mode {
+	case modeMessageViewer:
 		m.grid.Copy(m.viewer.Draw())
+		return m.grid
+	case modeInventoryDrop, modeInventoryActivate:
+		mapgrid.Copy(m.inventory.Draw())
 		return m.grid
 	}
 	m.grid.Fill(gruid.Cell{Rune: ' '})
-	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, 2, 0, -1))
 	g := m.game
 	// We draw the map tiles.
 	it := g.Map.Grid.Iterator()

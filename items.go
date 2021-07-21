@@ -29,14 +29,18 @@ type HealingPotion struct {
 	Amount int
 }
 
-func (hp *HealingPotion) Activate(g *game, a itemAction) error {
+func (pt *HealingPotion) Activate(g *game, a itemAction) error {
 	fi := g.ECS.Fighter[a.Actor]
 	if fi == nil {
 		// should not happen in practice
 		return fmt.Errorf("%s cannot use healing potions.", g.ECS.Name[a.Actor])
 	}
-	if fi.Heal(hp.Amount) <= 0 {
+	hp := fi.Heal(pt.Amount)
+	if hp <= 0 {
 		return errors.New("Your health is already full.")
+	}
+	if a.Actor == g.ECS.PlayerID {
+		g.Logf("You regained %d HP", ColorLogItemUse, hp)
 	}
 	return nil
 }

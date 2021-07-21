@@ -35,7 +35,7 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 		bg = image.NewUniform(color.RGBA{0x18, 0x49, 0x56, 255})
 	}
 	switch c.Style.Fg {
-	case ColorPlayer:
+	case ColorPlayer, ColorLogItemUse:
 		fg = image.NewUniform(color.RGBA{0x46, 0x95, 0xf7, 255})
 	case ColorMonster:
 		fg = image.NewUniform(color.RGBA{0xfa, 0x57, 0x50, 255})
