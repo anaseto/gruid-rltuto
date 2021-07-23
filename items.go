@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/anaseto/gruid"
+	"github.com/anaseto/gruid/paths"
 )
 
 // Consumable describes a consumable item, like a potion.
@@ -42,5 +43,34 @@ func (pt *HealingPotion) Activate(g *game, a itemAction) error {
 	if a.Actor == g.ECS.PlayerID {
 		g.Logf("You regained %d HP", ColorLogItemUse, hp)
 	}
+	return nil
+}
+
+// LightningScroll is an item that can be invoked to strike the closest enemy
+// within a particular range.
+type LightningScroll struct {
+	Range  int
+	Damage int
+}
+
+func (sc *LightningScroll) Activate(g *game, a itemAction) error {
+	target := -1
+	minDist := sc.Range + 1
+	for i := range g.ECS.Fighter {
+		p := g.ECS.Positions[i]
+		if i == a.Actor || g.ECS.Dead(i) || !g.InFOV(p) {
+			continue
+		}
+		dist := paths.DistanceManhattan(p, g.ECS.Positions[a.Actor])
+		if dist < minDist {
+			target = i
+			minDist = dist
+		}
+	}
+	if target < 0 {
+		return errors.New("No enemy within range.")
+	}
+	g.Logf("A lightning bolt strikes %v.", ColorLogItemUse, g.ECS.Name[target])
+	g.ECS.Fighter[target].HP -= sc.Damage
 	return nil
 }

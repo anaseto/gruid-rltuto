@@ -47,6 +47,14 @@ func (es *ECS) AddEntity(e Entity, p gruid.Point) int {
 	return id
 }
 
+// AddItem is a shorthand for adding item entities on the map.
+func (es *ECS) AddItem(e Entity, p gruid.Point, name string, r rune) int {
+	id := es.AddEntity(e, p)
+	es.Name[id] = name
+	es.Style[id] = Style{Rune: r, Color: ColorConsumable}
+	return id
+}
+
 // RemoveEntity removes an entity, given its identifier.
 func (es *ECS) RemoveEntity(i int) {
 	delete(es.Entities, i)

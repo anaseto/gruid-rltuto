@@ -137,12 +137,17 @@ func (g *game) BumpAttack(i, j int) {
 
 // PlaceItems adds items in the current map.
 func (g *game) PlaceItems() {
-	const numberOfPotions = 5
-	for i := 0; i < numberOfPotions; i++ {
+	const numberOfItems = 5
+	for i := 0; i < numberOfItems; i++ {
 		p := g.FreeFloorTile()
-		id := g.ECS.AddEntity(&HealingPotion{Amount: 4}, p)
-		g.ECS.Name[id] = "health potion"
-		g.ECS.Style[id] = Style{Rune: '!', Color: ColorConsumable}
+		r := g.Map.Rand.Float64()
+		switch {
+		case r < 0.7:
+			g.ECS.AddItem(&HealingPotion{Amount: 4}, p, "health potion", '!')
+		default:
+			g.ECS.AddItem(&LightningScroll{Range: 5, Damage: 20},
+				p, "lightning scroll", '?')
+		}
 	}
 }
 
