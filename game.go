@@ -45,13 +45,13 @@ func (g *game) SpawnMonsters() {
 				HP: 10, MaxHP: 10, Defense: 0, Power: 3,
 			}
 			g.ECS.Name[i] = "orc"
-			g.ECS.DStyle[i] = EStyle{Rune: 'o', Color: ColorMonster}
+			g.ECS.Style[i] = Style{Rune: 'o', Color: ColorMonster}
 		case troll:
 			g.ECS.Fighter[i] = &fighter{
 				HP: 16, MaxHP: 16, Defense: 1, Power: 4,
 			}
 			g.ECS.Name[i] = "troll"
-			g.ECS.DStyle[i] = EStyle{Rune: 'T', Color: ColorMonster}
+			g.ECS.Style[i] = Style{Rune: 'T', Color: ColorMonster}
 		}
 		g.ECS.AI[i] = &AI{}
 	}
@@ -142,7 +142,7 @@ func (g *game) PlaceItems() {
 		p := g.FreeFloorTile()
 		id := g.ECS.AddEntity(&HealingPotion{Amount: 4}, p)
 		g.ECS.Name[id] = "health potion"
-		g.ECS.DStyle[id] = EStyle{Rune: '!', Color: ColorConsumable}
+		g.ECS.Style[id] = Style{Rune: '!', Color: ColorConsumable}
 	}
 }
 

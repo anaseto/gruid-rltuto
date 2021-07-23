@@ -83,7 +83,7 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		m.game.ECS.Fighter[m.game.ECS.PlayerID] = &fighter{
 			HP: 30, MaxHP: 30, Power: 5, Defense: 2,
 		}
-		m.game.ECS.DStyle[m.game.ECS.PlayerID] = EStyle{Rune: '@', Color: ColorPlayer}
+		m.game.ECS.Style[m.game.ECS.PlayerID] = Style{Rune: '@', Color: ColorPlayer}
 		m.game.ECS.Name[m.game.ECS.PlayerID] = "player"
 		m.game.ECS.Inventory[m.game.ECS.PlayerID] = &Inventory{}
 		m.game.UpdateFOV()
@@ -215,7 +215,7 @@ func (m *model) Draw() gruid.Grid {
 			continue
 		}
 		c := mapgrid.At(p)
-		c.Rune, c.Style.Fg = g.ECS.Style(i)
+		c.Rune, c.Style.Fg = g.ECS.GetStyle(i)
 		mapgrid.Set(p, c)
 		// NOTE: We retrieved current cell at e.Pos() to preserve
 		// background (in FOV or not).

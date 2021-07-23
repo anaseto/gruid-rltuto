@@ -29,9 +29,9 @@ type AI struct {
 	Path []gruid.Point // path to destination
 }
 
-// EStyle contains information relative to the default graphical representation
+// Style contains information relative to the default graphical representation
 // of an entity.
-type EStyle struct {
+type Style struct {
 	Rune  rune
 	Color gruid.Color
 }

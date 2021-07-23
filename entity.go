@@ -20,7 +20,7 @@ type ECS struct {
 	Fighter   map[int]*fighter   // figthing component
 	AI        map[int]*AI        // AI component
 	Name      map[int]string     // name component
-	DStyle    map[int]EStyle     // default style component
+	Style     map[int]Style      // default style component
 	Inventory map[int]*Inventory // inventory component
 }
 
@@ -32,7 +32,7 @@ func NewECS() *ECS {
 		Fighter:   map[int]*fighter{},
 		AI:        map[int]*AI{},
 		Name:      map[int]string{},
-		DStyle:    map[int]EStyle{},
+		Style:     map[int]Style{},
 		Inventory: map[int]*Inventory{},
 		NextID:    0,
 	}
@@ -54,7 +54,7 @@ func (es *ECS) RemoveEntity(i int) {
 	delete(es.Fighter, i)
 	delete(es.AI, i)
 	delete(es.Name, i)
-	delete(es.DStyle, i)
+	delete(es.Style, i)
 	delete(es.Inventory, i)
 }
 
@@ -119,11 +119,11 @@ func (es *ECS) Dead(i int) bool {
 	return fi != nil && fi.HP <= 0
 }
 
-// Style returns the graphical representation (rune and foreground color) of an
+// GetStyle returns the graphical representation (rune and foreground color) of an
 // entity.
-func (es *ECS) Style(i int) (r rune, c gruid.Color) {
-	r = es.DStyle[i].Rune
-	c = es.DStyle[i].Color
+func (es *ECS) GetStyle(i int) (r rune, c gruid.Color) {
+	r = es.Style[i].Rune
+	c = es.Style[i].Color
 	if es.Dead(i) {
 		// Alternate representation for corpses of dead monsters.
 		r = '%'
