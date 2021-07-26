@@ -16,16 +16,23 @@ import (
 
 // model represents our main application's state.
 type model struct {
-	grid      gruid.Grid  // drawing grid
-	game      *game       // game state
-	action    action      // UI action
-	mode      mode        // UI mode
-	log       *ui.Label   // label for log
-	status    *ui.Label   // label for status
-	desc      *ui.Label   // label for position description
-	inventory *ui.Menu    // inventory menu
-	viewer    *ui.Pager   // message's history viewer
-	mousePos  gruid.Point // mouse position
+	grid      gruid.Grid // drawing grid
+	game      *game      // game state
+	action    action     // UI action
+	mode      mode       // UI mode
+	log       *ui.Label  // label for log
+	status    *ui.Label  // label for status
+	desc      *ui.Label  // label for position description
+	inventory *ui.Menu   // inventory menu
+	viewer    *ui.Pager  // message's history viewer
+	targ      targeting  // targeting information
+}
+
+// targeting describes information related to examination or selection of
+// particular positions in the map.
+type targeting struct {
+	pos  gruid.Point
+	item int // item to use after selecting target
 }
 
 // mode describes distinct kinds of modes for the UI
@@ -37,6 +44,8 @@ const (
 	modeInventoryActivate
 	modeInventoryDrop
 	modeMessageViewer
+	modeTargeting
+	modeExamination
 )
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -62,6 +71,9 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		return nil
 	case modeInventoryActivate, modeInventoryDrop:
 		m.updateInventory(msg)
+		return nil
+	case modeTargeting, modeExamination:
+		m.updateTargeting(msg)
 		return nil
 	}
 	switch msg := msg.(type) {
@@ -96,11 +108,54 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		m.updateMsgKeyDown(msg)
 	case gruid.MsgMouse:
 		if msg.Action == gruid.MouseMove {
-			m.mousePos = msg.P
+			m.targ.pos = msg.P
 		}
 	}
 	// Handle action (if any).
 	return m.handleAction()
+}
+
+func (m *model) updateTargeting(msg gruid.Msg) {
+	maprg := gruid.NewRange(0, 2, UIWidth, UIHeight-1)
+	if !m.targ.pos.In(maprg) {
+		m.targ.pos = m.game.ECS.PP().Add(maprg.Min)
+	}
+	switch msg := msg.(type) {
+	case gruid.MsgKeyDown:
+		p := m.targ.pos.Sub(maprg.Min)
+		switch msg.Key {
+		case gruid.KeyArrowLeft, "h":
+			p = p.Shift(-1, 0)
+		case gruid.KeyArrowDown, "j":
+			p = p.Shift(0, 1)
+		case gruid.KeyArrowUp, "k":
+			p = p.Shift(0, -1)
+		case gruid.KeyArrowRight, "l":
+			p = p.Shift(1, 0)
+		case gruid.KeyEnter, ".":
+			if m.mode == modeExamination {
+				break
+			}
+			err := m.game.InventoryActivateWithTarget(m.game.ECS.PlayerID, m.targ.item, &p)
+			if err != nil {
+				m.game.Logf("%v", ColorLogSpecial, err)
+			} else {
+				m.game.EndTurn()
+			}
+			m.mode = modeNormal
+			m.targ = targeting{}
+			return
+		case gruid.KeyEscape, "q":
+			m.targ = targeting{}
+			m.mode = modeNormal
+			return
+		}
+		m.targ.pos = p.Add(maprg.Min)
+	case gruid.MsgMouse:
+		if msg.Action == gruid.MouseMove {
+			m.targ.pos = msg.P
+		}
+	}
 }
 
 // updateInventory handles input messages when the inventory window is open.
@@ -122,6 +177,11 @@ func (m *model) updateInventory(msg gruid.Msg) {
 		case modeInventoryDrop:
 			err = m.game.InventoryRemove(m.game.ECS.PlayerID, n)
 		case modeInventoryActivate:
+			if m.game.NeedsTargeting(n) {
+				m.targ = targeting{item: n, pos: m.game.ECS.PP().Shift(0, 2)}
+				m.mode = modeTargeting
+				return
+			}
 			err = m.game.InventoryActivate(m.game.ECS.PlayerID, n)
 		}
 		if err != nil {
@@ -135,6 +195,7 @@ func (m *model) updateInventory(msg gruid.Msg) {
 
 func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 	pdelta := gruid.Point{}
+	m.targ.pos = gruid.Point{}
 	switch msg.Key {
 	case gruid.KeyArrowLeft, "h":
 		m.action = action{Type: ActionBump, Delta: pdelta.Shift(-1, 0)}
@@ -172,6 +233,10 @@ const (
 	ColorStatusHealthy
 	ColorStatusWounded
 	ColorConsumable
+)
+
+const (
+	AttrReverse = 1 << iota
 )
 
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
@@ -259,10 +324,13 @@ func (m *model) DrawStatus(gd gruid.Grid) {
 // if it is in the map.
 func (m *model) DrawNames(gd gruid.Grid) {
 	maprg := gruid.NewRange(0, 2, UIWidth, UIHeight-1)
-	if !m.mousePos.In(maprg) {
+	if !m.targ.pos.In(maprg) {
 		return
 	}
-	p := m.mousePos.Sub(gruid.Point{0, 2})
+	p := m.targ.pos.Sub(gruid.Point{0, 2})
+	c := gd.At(p)
+	c.Style.Attrs |= AttrReverse
+	gd.Set(p, c)
 	// We get the names of the entities at p.
 	names := []string{}
 	for i, q := range m.game.ECS.Positions {

@@ -81,6 +81,7 @@ func (g *game) EndTurn() {
 			g.HandleMonsterTurn(i)
 		}
 	}
+	g.ECS.StatusesNextTurn()
 }
 
 // UpdateFOV updates the field of view.
@@ -144,6 +145,8 @@ func (g *game) PlaceItems() {
 		switch {
 		case r < 0.7:
 			g.ECS.AddItem(&HealingPotion{Amount: 4}, p, "health potion", '!')
+		case r < 0.85:
+			g.ECS.AddItem(&ConfusionScroll{Turns: 10}, p, "confusion scroll", '?')
 		default:
 			g.ECS.AddItem(&LightningScroll{Range: 5, Damage: 20},
 				p, "lightning scroll", '?')
@@ -185,6 +188,12 @@ func (g *game) InventoryRemove(actor, n int) error {
 
 // InventoryActivate uses a given item from the inventory.
 func (g *game) InventoryActivate(actor, n int) error {
+	return g.InventoryActivateWithTarget(actor, n, nil)
+}
+
+// InventoryActivateWithTarget uses a given item from the inventory, with
+// an optional target.
+func (g *game) InventoryActivateWithTarget(actor, n int, targ *gruid.Point) error {
 	inv := g.ECS.Inventory[actor]
 	if len(inv.Items) <= n {
 		return errors.New("Empty slot.")
@@ -192,7 +201,7 @@ func (g *game) InventoryActivate(actor, n int) error {
 	i := inv.Items[n]
 	switch e := g.ECS.Entities[i].(type) {
 	case Consumable:
-		err := e.Activate(g, itemAction{Actor: actor})
+		err := e.Activate(g, itemAction{Actor: actor, Target: targ})
 		if err != nil {
 			return err
 		}
@@ -203,4 +212,18 @@ func (g *game) InventoryActivate(actor, n int) error {
 	inv.Items[n] = inv.Items[len(inv.Items)-1]
 	inv.Items = inv.Items[:len(inv.Items)-1]
 	return nil
+}
+
+// NeedsTargeting checks whether using the n-th item requires targeting.
+func (g *game) NeedsTargeting(n int) bool {
+	inv := g.ECS.Inventory[g.ECS.PlayerID]
+	if len(inv.Items) <= n {
+		return false
+	}
+	i := inv.Items[n]
+	switch g.ECS.Entities[i].(type) {
+	case Targetter:
+		return true
+	}
+	return false
 }

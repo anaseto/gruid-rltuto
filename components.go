@@ -40,3 +40,29 @@ type Style struct {
 type Inventory struct {
 	Items []int
 }
+
+// status describes different kind of statuses.
+type status int
+
+const (
+	StatusConfused status = iota
+)
+
+// Statuses maps ongoing statuses to their remaining turns.
+type Statuses map[status]int
+
+// NextTurn updates statuses for the next turn.
+func (sts Statuses) NextTurn() {
+	for st, turns := range sts {
+		if turns == 0 {
+			delete(sts, st)
+			continue
+		}
+		sts[st]--
+	}
+}
+
+// Put puts on a particular status for a given number of turns.
+func (sts Statuses) Put(st status, turns int) {
+	sts[st] = turns
+}

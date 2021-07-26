@@ -22,6 +22,7 @@ type ECS struct {
 	Name      map[int]string     // name component
 	Style     map[int]Style      // default style component
 	Inventory map[int]*Inventory // inventory component
+	Statuses  map[int]Statuses   // statuses (confused, etc.)
 }
 
 // NewECS returns an initialized ECS structure.
@@ -34,6 +35,7 @@ func NewECS() *ECS {
 		Name:      map[int]string{},
 		Style:     map[int]Style{},
 		Inventory: map[int]*Inventory{},
+		Statuses:  map[int]Statuses{},
 		NextID:    0,
 	}
 }
@@ -89,24 +91,24 @@ func (es *ECS) PP() gruid.Point {
 
 // MonsterAt returns the Monster at p along with its index, if any, or nil if
 // there is no monster at p.
-func (es *ECS) MonsterAt(p gruid.Point) (int, *Monster) {
+func (es *ECS) MonsterAt(p gruid.Point) int {
 	for i, q := range es.Positions {
 		if p != q || !es.Alive(i) {
 			continue
 		}
 		e := es.Entities[i]
-		switch e := e.(type) {
+		switch e.(type) {
 		case *Monster:
-			return i, e
+			return i
 		}
 	}
-	return -1, nil
+	return -1
 }
 
 // NoBlockingEntityAt returns true if there is no blocking entity at p (no
 // player nor monsters in this tutorial).
 func (es *ECS) NoBlockingEntityAt(p gruid.Point) bool {
-	i, _ := es.MonsterAt(p)
+	i := es.MonsterAt(p)
 	return es.PP() != p && !es.Alive(i)
 }
 
@@ -148,6 +150,29 @@ func (es *ECS) GetName(i int) (s string) {
 		name = "corpse"
 	}
 	return name
+}
+
+// StatusesNextTurn updates the remaining turns of entities' statuses.
+func (es *ECS) StatusesNextTurn() {
+	for _, sts := range es.Statuses {
+		sts.NextTurn()
+	}
+}
+
+// PutStatus puts on a particular status for a given entity for a certain
+// number of turns.
+func (es *ECS) PutStatus(i int, st status, turns int) {
+	if es.Statuses[i] == nil {
+		es.Statuses[i] = map[status]int{}
+	}
+	sts := es.Statuses[i]
+	sts.Put(st, turns)
+}
+
+// Status checks whether an entity has a particular status effect.
+func (es *ECS) Status(i int, st status) bool {
+	_, ok := es.Statuses[i][st]
+	return ok
 }
 
 // renderOrder is a type representing the priority of an entity rendering.

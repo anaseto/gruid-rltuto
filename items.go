@@ -70,7 +70,42 @@ func (sc *LightningScroll) Activate(g *game, a itemAction) error {
 	if target < 0 {
 		return errors.New("No enemy within range.")
 	}
-	g.Logf("A lightning bolt strikes %v.", ColorLogItemUse, g.ECS.Name[target])
+	g.Logf("A lightning bolt strikes %v.", ColorLogItemUse, g.ECS.GetName(target))
 	g.ECS.Fighter[target].HP -= sc.Damage
 	return nil
 }
+
+// Targetter describes consumables (or other kind of activables) that need
+// a target in order to be used.
+type Targetter interface {
+	// TODO: could be expanded to distinguish between different kind of
+	// targetting requirements.
+	NeedsTargeting()
+}
+
+// ConfusionScroll is an item that can be invoked to confuse an enemy.
+type ConfusionScroll struct {
+	Turns int
+}
+
+func (sc *ConfusionScroll) Activate(g *game, a itemAction) error {
+	if a.Target == nil {
+		return errors.New("You have to chose a target.")
+	}
+	p := *a.Target
+	if !g.InFOV(p) {
+		return errors.New("You cannot target what you cannot see.")
+	}
+	if p == g.ECS.PP() {
+		return errors.New("You cannot confuse yourself.")
+	}
+	i := g.ECS.MonsterAt(p)
+	if i <= 0 || !g.ECS.Alive(i) {
+		return errors.New("You have to target a monster.")
+	}
+	g.Logf("%s looks confused (scroll).", ColorLogItemUse, g.ECS.GetName(i))
+	g.ECS.PutStatus(i, StatusConfused, sc.Turns)
+	return nil
+}
+
+func (sc *ConfusionScroll) NeedsTargeting() {}

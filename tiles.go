@@ -48,6 +48,9 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 	case ColorConsumable:
 		fg = image.NewUniform(color.RGBA{0xdb, 0xb3, 0x2d, 255})
 	}
+	if c.Style.Attrs&AttrReverse != 0 {
+		fg, bg = bg, fg
+	}
 	// We return an image with the given rune drawn using the previously
 	// defined foreground and background colors.
 	return t.drawer.Draw(c.Rune, fg, bg)

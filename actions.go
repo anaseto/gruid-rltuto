@@ -71,7 +71,7 @@ func (g *game) Bump(to gruid.Point) {
 	if !g.Map.Walkable(to) {
 		return
 	}
-	if i, _ := g.ECS.MonsterAt(to); g.ECS.Alive(i) {
+	if i := g.ECS.MonsterAt(to); g.ECS.Alive(i) {
 		// We show a message to standard error. Later in the tutorial,
 		// we'll put a message in the UI instead.
 		g.BumpAttack(g.ECS.PlayerID, i)

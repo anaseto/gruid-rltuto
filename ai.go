@@ -3,6 +3,8 @@
 package main
 
 import (
+	"math/rand"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/paths"
 )
@@ -13,6 +15,10 @@ import (
 func (g *game) HandleMonsterTurn(i int) {
 	if !g.ECS.Alive(i) {
 		// Do nothing if the entity corresponds to a dead monster.
+		return
+	}
+	if g.ECS.Status(i, StatusConfused) {
+		g.HandleConfusedMonster(i)
 		return
 	}
 	p := g.ECS.Positions[i]
@@ -40,6 +46,24 @@ func (g *game) HandleMonsterTurn(i int) {
 	// reach the player.
 	ai.Path = g.PR.AstarPath(aip, p, pp)
 	g.AIMove(i)
+}
+
+// HandleConfusedMonster handles the behavior of a confused monster. It simply
+// tries to bump into a random direction.
+func (g *game) HandleConfusedMonster(i int) {
+	p := g.ECS.Positions[i]
+	p.X += -1 + 2*rand.Intn(2)
+	p.Y += -1 + 2*rand.Intn(2)
+	if !p.In(g.Map.Grid.Range()) {
+		return
+	}
+	if p == g.ECS.PP() {
+		g.BumpAttack(i, g.ECS.PlayerID)
+		return
+	}
+	if g.Map.Walkable(p) && g.ECS.NoBlockingEntityAt(p) {
+		g.ECS.MoveEntity(i, p)
+	}
 }
 
 // AIMove moves a monster to the next position, if there is no blocking entity
