@@ -472,3 +472,7 @@ index ccec92d..723ed81 100644
  	return nil
  }
 ```
+
+* * * 
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-8)
