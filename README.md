@@ -736,3 +736,7 @@ index 9a945c0..482d13e 100644
  	// We return an image with the given rune drawn using the previously
  	// defined foreground and background colors.
 ```
+
+* * *
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-9)
