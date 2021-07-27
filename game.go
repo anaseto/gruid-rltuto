@@ -145,8 +145,10 @@ func (g *game) PlaceItems() {
 		switch {
 		case r < 0.7:
 			g.ECS.AddItem(&HealingPotion{Amount: 4}, p, "health potion", '!')
-		case r < 0.85:
+		case r < 0.8:
 			g.ECS.AddItem(&ConfusionScroll{Turns: 10}, p, "confusion scroll", '?')
+		case r < 0.9:
+			g.ECS.AddItem(&FireballScroll{Damage: 12, Radius: 3}, p, "fireball scroll", '?')
 		default:
 			g.ECS.AddItem(&LightningScroll{Range: 5, Damage: 20},
 				p, "lightning scroll", '?')
@@ -214,16 +216,17 @@ func (g *game) InventoryActivateWithTarget(actor, n int, targ *gruid.Point) erro
 	return nil
 }
 
-// NeedsTargeting checks whether using the n-th item requires targeting.
-func (g *game) NeedsTargeting(n int) bool {
+// NeedsTargeting checks whether using the n-th item requires targeting,
+// returning its radius (-1 if no targeting).
+func (g *game) TargetingRadius(n int) int {
 	inv := g.ECS.Inventory[g.ECS.PlayerID]
 	if len(inv.Items) <= n {
-		return false
+		return -1
 	}
 	i := inv.Items[n]
-	switch g.ECS.Entities[i].(type) {
+	switch e := g.ECS.Entities[i].(type) {
 	case Targetter:
-		return true
+		return e.TargetingRadius()
 	}
-	return false
+	return -1
 }

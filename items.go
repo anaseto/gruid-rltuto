@@ -78,9 +78,9 @@ func (sc *LightningScroll) Activate(g *game, a itemAction) error {
 // Targetter describes consumables (or other kind of activables) that need
 // a target in order to be used.
 type Targetter interface {
-	// TODO: could be expanded to distinguish between different kind of
-	// targetting requirements.
-	NeedsTargeting()
+	// TargetingRadius returns the radius of the affected area around the
+	// target.
+	TargetingRadius() int
 }
 
 // ConfusionScroll is an item that can be invoked to confuse an enemy.
@@ -103,9 +103,49 @@ func (sc *ConfusionScroll) Activate(g *game, a itemAction) error {
 	if i <= 0 || !g.ECS.Alive(i) {
 		return errors.New("You have to target a monster.")
 	}
-	g.Logf("%s looks confused (scroll).", ColorLogItemUse, g.ECS.GetName(i))
+	g.Logf("%s looks confused (scroll).", ColorLogPlayerAttack, g.ECS.GetName(i))
 	g.ECS.PutStatus(i, StatusConfused, sc.Turns)
 	return nil
 }
 
-func (sc *ConfusionScroll) NeedsTargeting() {}
+func (sc *ConfusionScroll) TargetingRadius() int { return 0 }
+
+// FireballScroll is an item that can be invoked to produce a flame explosion
+// in an area around a target position.
+type FireballScroll struct {
+	Damage int
+	Radius int
+}
+
+func (sc *FireballScroll) Activate(g *game, a itemAction) error {
+	if a.Target == nil {
+		return errors.New("You have to chose a target.")
+	}
+	p := *a.Target
+	if !g.InFOV(p) {
+		return errors.New("You cannot target what you cannot see.")
+	}
+	hits := 0
+	// NOTE: this could be made more complicated by checking whether there
+	// are monsters in the way. For now, it's a fireball that goes up and
+	// then down and explodes on reaching the target!
+	for i, fi := range g.ECS.Fighter {
+		if g.ECS.Dead(i) {
+			continue
+		}
+		q := g.ECS.Positions[i]
+		dist := paths.DistanceManhattan(q, p)
+		if dist > sc.Radius {
+			continue
+		}
+		g.Logf("%v is engulfed in flames.", ColorLogPlayerAttack, g.ECS.GetName(i))
+		fi.HP -= sc.Damage
+		hits++
+	}
+	if hits <= 0 {
+		return errors.New("There are no targets in the radius.")
+	}
+	return nil
+}
+
+func (sc *FireballScroll) TargetingRadius() int { return sc.Radius }

@@ -12,8 +12,9 @@ import (
 const (
 	UIWidth   = 80
 	UIHeight  = 24
+	LogLines  = 2
 	MapWidth  = UIWidth
-	MapHeight = UIHeight - 3
+	MapHeight = UIHeight - 1 - LogLines
 )
 
 func main() {

@@ -25,6 +25,7 @@ const (
 	ActionWait                    // wait a turn
 	ActionQuit                    // quit the game
 	ActionViewMessages            // view history messages
+	ActionExamine                 // examine map
 )
 
 // handleAction updates the model in response to current recorded last action.
@@ -56,6 +57,9 @@ func (m *model) handleAction() gruid.Effect {
 			lines = append(lines, ui.NewStyledText(e.String(), st))
 		}
 		m.viewer.SetLines(lines)
+	case ActionExamine:
+		m.mode = modeExamination
+		m.targ.pos = m.game.ECS.PP().Shift(0, LogLines)
 	}
 	if m.game.ECS.PlayerDied() {
 		m.game.Logf("You died -- press “q” or escape to quit", ColorLogSpecial)

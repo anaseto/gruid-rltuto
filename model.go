@@ -31,11 +31,14 @@ type model struct {
 // targeting describes information related to examination or selection of
 // particular positions in the map.
 type targeting struct {
-	pos  gruid.Point
-	item int // item to use after selecting target
+	pos    gruid.Point
+	item   int // item to use after selecting target
+	radius int
 }
 
-// mode describes distinct kinds of modes for the UI
+// mode describes distinct kinds of modes for the UI. It is used to send user
+// input messages to different handlers (inventory window, map, message viewer,
+// etc.), depending on the current mode.
 type mode int
 
 const (
@@ -44,8 +47,8 @@ const (
 	modeInventoryActivate
 	modeInventoryDrop
 	modeMessageViewer
-	modeTargeting
-	modeExamination
+	modeTargeting   // targeting mode (item use)
+	modeExamination // keyboad map examination mode
 )
 
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
@@ -115,14 +118,16 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	return m.handleAction()
 }
 
+// updateTargeting updates targeting information in response to user input
+// messages.
 func (m *model) updateTargeting(msg gruid.Msg) {
-	maprg := gruid.NewRange(0, 2, UIWidth, UIHeight-1)
+	maprg := gruid.NewRange(0, LogLines, UIWidth, UIHeight-1)
 	if !m.targ.pos.In(maprg) {
 		m.targ.pos = m.game.ECS.PP().Add(maprg.Min)
 	}
+	p := m.targ.pos.Sub(maprg.Min)
 	switch msg := msg.(type) {
 	case gruid.MsgKeyDown:
-		p := m.targ.pos.Sub(maprg.Min)
 		switch msg.Key {
 		case gruid.KeyArrowLeft, "h":
 			p = p.Shift(-1, 0)
@@ -136,14 +141,7 @@ func (m *model) updateTargeting(msg gruid.Msg) {
 			if m.mode == modeExamination {
 				break
 			}
-			err := m.game.InventoryActivateWithTarget(m.game.ECS.PlayerID, m.targ.item, &p)
-			if err != nil {
-				m.game.Logf("%v", ColorLogSpecial, err)
-			} else {
-				m.game.EndTurn()
-			}
-			m.mode = modeNormal
-			m.targ = targeting{}
+			m.activateTarget(p)
 			return
 		case gruid.KeyEscape, "q":
 			m.targ = targeting{}
@@ -152,10 +150,24 @@ func (m *model) updateTargeting(msg gruid.Msg) {
 		}
 		m.targ.pos = p.Add(maprg.Min)
 	case gruid.MsgMouse:
-		if msg.Action == gruid.MouseMove {
+		switch msg.Action {
+		case gruid.MouseMove:
 			m.targ.pos = msg.P
+		case gruid.MouseMain:
+			m.activateTarget(p)
 		}
 	}
+}
+
+func (m *model) activateTarget(p gruid.Point) {
+	err := m.game.InventoryActivateWithTarget(m.game.ECS.PlayerID, m.targ.item, &p)
+	if err != nil {
+		m.game.Logf("%v", ColorLogSpecial, err)
+	} else {
+		m.game.EndTurn()
+	}
+	m.mode = modeNormal
+	m.targ = targeting{}
 }
 
 // updateInventory handles input messages when the inventory window is open.
@@ -177,8 +189,12 @@ func (m *model) updateInventory(msg gruid.Msg) {
 		case modeInventoryDrop:
 			err = m.game.InventoryRemove(m.game.ECS.PlayerID, n)
 		case modeInventoryActivate:
-			if m.game.NeedsTargeting(n) {
-				m.targ = targeting{item: n, pos: m.game.ECS.PP().Shift(0, 2)}
+			if radius := m.game.TargetingRadius(n); radius >= 0 {
+				m.targ = targeting{
+					item:   n,
+					pos:    m.game.ECS.PP().Shift(0, LogLines),
+					radius: radius,
+				}
 				m.mode = modeTargeting
 				return
 			}
@@ -217,6 +233,8 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 		m.action = action{Type: ActionDrop}
 	case "g":
 		m.action = action{Type: ActionPickup}
+	case "x":
+		m.action = action{Type: ActionExamine}
 	}
 }
 
@@ -242,7 +260,7 @@ const (
 // Draw implements gruid.Model.Draw. It draws a simple map that spans the whole
 // grid.
 func (m *model) Draw() gruid.Grid {
-	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, 2, 0, -1))
+	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, LogLines, 0, -1))
 	switch m.mode {
 	case modeMessageViewer:
 		m.grid.Copy(m.viewer.Draw())
@@ -286,7 +304,7 @@ func (m *model) Draw() gruid.Grid {
 		// background (in FOV or not).
 	}
 	m.DrawNames(mapgrid)
-	m.DrawLog(m.grid.Slice(m.grid.Range().Lines(0, 2)))
+	m.DrawLog(m.grid.Slice(m.grid.Range().Lines(0, LogLines)))
 	m.DrawStatus(m.grid.Slice(m.grid.Range().Line(m.grid.Size().Y - 1)))
 	return m.grid
 }
@@ -323,14 +341,19 @@ func (m *model) DrawStatus(gd gruid.Grid) {
 // DrawNames renders the names of the named entities at current mouse location
 // if it is in the map.
 func (m *model) DrawNames(gd gruid.Grid) {
-	maprg := gruid.NewRange(0, 2, UIWidth, UIHeight-1)
+	maprg := gruid.NewRange(0, LogLines, UIWidth, UIHeight-1)
 	if !m.targ.pos.In(maprg) {
 		return
 	}
-	p := m.targ.pos.Sub(gruid.Point{0, 2})
-	c := gd.At(p)
-	c.Style.Attrs |= AttrReverse
-	gd.Set(p, c)
+	p := m.targ.pos.Sub(maprg.Min)
+	rad := m.targ.radius
+	rg := gruid.Range{Min: p.Sub(gruid.Point{rad, rad}), Max: p.Add(gruid.Point{rad + 1, rad + 1})}
+	rg = rg.Intersect(maprg.Sub(maprg.Min))
+	rg.Iter(func(q gruid.Point) {
+		c := gd.At(q)
+		c.Style.Attrs |= AttrReverse
+		gd.Set(q, c)
+	})
 	// We get the names of the entities at p.
 	names := []string{}
 	for i, q := range m.game.ECS.Positions {
@@ -352,7 +375,7 @@ func (m *model) DrawNames(gd gruid.Grid) {
 
 	text := strings.Join(names, ", ")
 	width := utf8.RuneCountInString(text) + 2
-	rg := gruid.NewRange(p.X+1, p.Y-1, p.X+1+width, p.Y+2)
+	rg = gruid.NewRange(p.X+1, p.Y-1, p.X+1+width, p.Y+2)
 	// we adjust a bit the box's placement in case it's on a edge.
 	if p.X+1+width >= UIWidth {
 		rg = rg.Shift(-1-width, 0, -1-width, 0)
