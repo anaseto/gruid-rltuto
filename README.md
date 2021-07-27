@@ -15,6 +15,8 @@ TCOD.
 * [Part 5](https://github.com/anaseto/gruid-rltuto/tree/part-5) - Placing enemies and kicking them (harmlessly)
 * [Part 6](https://github.com/anaseto/gruid-rltuto/tree/part-6) - Doing (and taking) some damage
 * [Part 7](https://github.com/anaseto/gruid-rltuto/tree/part-7) - Creating the Interface
+* [Part 8](https://github.com/anaseto/gruid-rltuto/tree/part-8) - Items and Inventory
+* [Part 9](https://github.com/anaseto/gruid-rltuto/tree/part-9) - Ranged Scrolls and Targeting
 
 ## Tips & Remarks
 
