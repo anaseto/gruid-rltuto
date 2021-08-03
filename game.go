@@ -20,6 +20,31 @@ type game struct {
 	Log []LogEntry       // log entries
 }
 
+// NewGame initializes a new game.
+func NewGame() *game {
+	g := &game{}
+	size := gruid.Point{UIWidth, UIHeight}
+	size.Y -= 3 // for log and status
+	g.Map = NewMap(size)
+	g.PR = paths.NewPathRange(gruid.NewRange(0, 0, size.X, size.Y))
+	// Initialize entities
+	g.ECS = NewECS()
+	// Initialization: create a player entity centered on the map.
+	g.ECS.PlayerID = g.ECS.AddEntity(NewPlayer(), g.Map.RandomFloor())
+	g.ECS.Fighter[g.ECS.PlayerID] = &fighter{
+		HP: 30, MaxHP: 30, Power: 5, Defense: 2,
+	}
+	g.ECS.Style[g.ECS.PlayerID] = Style{Rune: '@', Color: ColorPlayer}
+	g.ECS.Name[g.ECS.PlayerID] = "player"
+	g.ECS.Inventory[g.ECS.PlayerID] = &Inventory{}
+	g.UpdateFOV()
+	// Add some monsters
+	g.SpawnMonsters()
+	// Add items
+	g.PlaceItems()
+	return g
+}
+
 // SpawnMonsters adds some monsters in the current map.
 func (g *game) SpawnMonsters() {
 	const numberOfMonsters = 12

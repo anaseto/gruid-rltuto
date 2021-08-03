@@ -10,7 +10,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/anaseto/gruid"
-	"github.com/anaseto/gruid/paths"
 	"github.com/anaseto/gruid/ui"
 )
 
@@ -85,27 +84,8 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		m.status = &ui.Label{}
 		m.desc = &ui.Label{Box: &ui.Box{}}
 		m.InitializeMessageViewer()
-		m.game = &game{}
+		m.game = NewGame()
 		// Initialize map
-		size := m.grid.Size()
-		size.Y -= 3 // for log and status
-		m.game.Map = NewMap(size)
-		m.game.PR = paths.NewPathRange(gruid.NewRange(0, 0, size.X, size.Y))
-		// Initialize entities
-		m.game.ECS = NewECS()
-		// Initialization: create a player entity centered on the map.
-		m.game.ECS.PlayerID = m.game.ECS.AddEntity(NewPlayer(), m.game.Map.RandomFloor())
-		m.game.ECS.Fighter[m.game.ECS.PlayerID] = &fighter{
-			HP: 30, MaxHP: 30, Power: 5, Defense: 2,
-		}
-		m.game.ECS.Style[m.game.ECS.PlayerID] = Style{Rune: '@', Color: ColorPlayer}
-		m.game.ECS.Name[m.game.ECS.PlayerID] = "player"
-		m.game.ECS.Inventory[m.game.ECS.PlayerID] = &Inventory{}
-		m.game.UpdateFOV()
-		// Add some monsters
-		m.game.SpawnMonsters()
-		// Add items
-		m.game.PlaceItems()
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
