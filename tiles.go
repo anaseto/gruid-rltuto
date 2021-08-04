@@ -45,7 +45,7 @@ func (t *TileDrawer) GetImage(c gruid.Cell) image.Image {
 		fg = image.NewUniform(color.RGBA{0xed, 0x86, 0x49, 255})
 	case ColorLogSpecial:
 		fg = image.NewUniform(color.RGBA{0xf2, 0x75, 0xbe, 255})
-	case ColorConsumable:
+	case ColorConsumable, ColorMenuActive:
 		fg = image.NewUniform(color.RGBA{0xdb, 0xb3, 0x2d, 255})
 	}
 	if c.Style.Attrs&AttrReverse != 0 {

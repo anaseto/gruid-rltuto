@@ -20,7 +20,7 @@ const (
 // Map represents the rectangular map of the game's level.
 type Map struct {
 	Grid     rl.Grid
-	Rand     *rand.Rand           // random number generator
+	rand     *rand.Rand           // random number generator
 	Explored map[gruid.Point]bool // explored cells
 }
 
@@ -28,7 +28,7 @@ type Map struct {
 func NewMap(size gruid.Point) *Map {
 	m := &Map{
 		Grid:     rl.NewGrid(size.X, size.Y),
-		Rand:     rand.New(rand.NewSource(time.Now().UnixNano())),
+		rand:     rand.New(rand.NewSource(time.Now().UnixNano())),
 		Explored: make(map[gruid.Point]bool),
 	}
 	m.Generate()
@@ -54,7 +54,7 @@ func (m *Map) Rune(c rl.Cell) (r rune) {
 // Generate fills the Grid attribute of m with a procedurally generated map.
 func (m *Map) Generate() {
 	// map generator using the rl package from gruid
-	mgen := rl.MapGen{Rand: m.Rand, Grid: m.Grid}
+	mgen := rl.MapGen{Rand: m.rand, Grid: m.Grid}
 	// cellular automata map generation with rules that give a cave-like
 	// map.
 	rules := []rl.CellularAutomataRule{
@@ -84,7 +84,7 @@ func (m *Map) Generate() {
 func (m *Map) RandomFloor() gruid.Point {
 	size := m.Grid.Size()
 	for {
-		freep := gruid.Point{m.Rand.Intn(size.X), m.Rand.Intn(size.Y)}
+		freep := gruid.Point{m.rand.Intn(size.X), m.rand.Intn(size.Y)}
 		if m.Grid.At(freep) == Floor {
 			return freep
 		}

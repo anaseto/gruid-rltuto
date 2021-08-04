@@ -3,6 +3,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/anaseto/gruid"
 	"github.com/anaseto/gruid/ui"
 )
@@ -23,7 +25,8 @@ const (
 	ActionInventory               // inventory menu to use an item
 	ActionPickup                  // pickup an item on the ground
 	ActionWait                    // wait a turn
-	ActionQuit                    // quit the game
+	ActionQuit                    // quit the game (without saving)
+	ActionSave                    // save the game
 	ActionViewMessages            // view history messages
 	ActionExamine                 // examine map
 )
@@ -44,7 +47,20 @@ func (m *model) handleAction() gruid.Effect {
 		m.game.PickupItem()
 	case ActionWait:
 		m.game.EndTurn()
+	case ActionSave:
+		data, err := EncodeGame(m.game)
+		if err == nil {
+			err = SaveFile("save", data)
+		}
+		if err != nil {
+			m.game.Logf("Could not save game.", ColorLogSpecial)
+			log.Printf("could not save game: %v", err)
+			break
+		}
+		return gruid.End()
 	case ActionQuit:
+		// Remove any previously saved files (if any).
+		RemoveDataFile("save")
 		// for now, just terminate with gruid End command: this will
 		// have to be updated later when implementing saving.
 		return gruid.End()

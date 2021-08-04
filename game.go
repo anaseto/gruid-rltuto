@@ -58,7 +58,7 @@ func (g *game) SpawnMonsters() {
 		)
 		kind := orc
 		switch {
-		case g.Map.Rand.Intn(100) < 80:
+		case g.Map.rand.Intn(100) < 80:
 		default:
 			kind = troll
 		}
@@ -166,7 +166,7 @@ func (g *game) PlaceItems() {
 	const numberOfItems = 5
 	for i := 0; i < numberOfItems; i++ {
 		p := g.FreeFloorTile()
-		r := g.Map.Rand.Float64()
+		r := g.Map.rand.Float64()
 		switch {
 		case r < 0.7:
 			g.ECS.AddItem(&HealingPotion{Amount: 4}, p, "health potion", '!')

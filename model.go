@@ -5,8 +5,10 @@
 package main
 
 import (
+	"math/rand"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/anaseto/gruid"
@@ -25,6 +27,8 @@ type model struct {
 	inventory *ui.Menu   // inventory menu
 	viewer    *ui.Pager  // message's history viewer
 	targ      targeting  // targeting information
+	gameMenu  *ui.Menu   // game's main menu
+	info      *ui.Label  // info label in main menu (for errors)
 }
 
 // targeting describes information related to examination or selection of
@@ -45,6 +49,7 @@ const (
 	modeEnd         // win or death (currently only death)
 	modeInventoryActivate
 	modeInventoryDrop
+	modeGameMenu
 	modeMessageViewer
 	modeTargeting   // targeting mode (item use)
 	modeExamination // keyboad map examination mode
@@ -53,8 +58,14 @@ const (
 // Update implements gruid.Model.Update. It handles keyboard and mouse input
 // messages and updates the model in response to them.
 func (m *model) Update(msg gruid.Msg) gruid.Effect {
+	switch msg.(type) {
+	case gruid.MsgInit:
+		return m.init()
+	}
 	m.action = action{} // reset last action information
 	switch m.mode {
+	case modeGameMenu:
+		return m.updateGameMenu(msg)
 	case modeEnd:
 		switch msg := msg.(type) {
 		case gruid.MsgKeyDown:
@@ -79,13 +90,6 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 		return nil
 	}
 	switch msg := msg.(type) {
-	case gruid.MsgInit:
-		m.log = &ui.Label{}
-		m.status = &ui.Label{}
-		m.desc = &ui.Label{Box: &ui.Box{}}
-		m.InitializeMessageViewer()
-		m.game = NewGame()
-		// Initialize map
 	case gruid.MsgKeyDown:
 		// Update action information on key down.
 		m.updateMsgKeyDown(msg)
@@ -96,6 +100,72 @@ func (m *model) Update(msg gruid.Msg) gruid.Effect {
 	}
 	// Handle action (if any).
 	return m.handleAction()
+}
+
+const (
+	MenuNewGame = iota
+	MenuContinue
+	MenuQuit
+)
+
+// init initializes the model: widgets' initialization, and starting mode.
+func (m *model) init() gruid.Effect {
+	m.log = &ui.Label{}
+	m.status = &ui.Label{}
+	m.info = &ui.Label{}
+	m.desc = &ui.Label{Box: &ui.Box{}}
+	m.InitializeMessageViewer()
+	m.mode = modeGameMenu
+	entries := []ui.MenuEntry{
+		MenuNewGame:  {Text: ui.Text("(N)ew game"), Keys: []gruid.Key{"N", "n"}},
+		MenuContinue: {Text: ui.Text("(C)ontinue last game"), Keys: []gruid.Key{"C", "c"}},
+		MenuQuit:     {Text: ui.Text("(Q)uit")},
+	}
+	m.gameMenu = ui.NewMenu(ui.MenuConfig{
+		Grid:    gruid.NewGrid(UIWidth/2, len(entries)+2),
+		Box:     &ui.Box{Title: ui.Text("Gruid Roguelike Tutorial")},
+		Entries: entries,
+		Style:   ui.MenuStyle{Active: gruid.Style{}.WithFg(ColorMenuActive)},
+	})
+	return nil
+}
+
+// updateGameMenu updates the Game Menu and switchs mode to normal after
+// starting a new game or loading an old one.
+func (m *model) updateGameMenu(msg gruid.Msg) gruid.Effect {
+	rg := m.grid.Range().Intersect(m.grid.Range().Add(mainMenuAnchor))
+	m.gameMenu.Update(rg.RelMsg(msg))
+	switch m.gameMenu.Action() {
+	case ui.MenuMove:
+		m.info.SetText("")
+	case ui.MenuInvoke:
+		m.info.SetText("")
+		switch m.gameMenu.Active() {
+		case MenuNewGame:
+			m.game = NewGame()
+			m.mode = modeNormal
+		case MenuContinue:
+			data, err := LoadFile("save")
+			if err != nil {
+				m.info.SetText(err.Error())
+				break
+			}
+			g, err := DecodeGame(data)
+			if err != nil {
+				m.info.SetText(err.Error())
+				break
+			}
+			m.game = g
+			m.mode = modeNormal
+			// the random number generator is not saved
+			m.game.Map.rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+		case MenuQuit:
+			return gruid.End()
+		}
+	case ui.MenuQuit:
+		return gruid.End()
+	}
+	return nil
 }
 
 // updateTargeting updates targeting information in response to user input
@@ -203,8 +273,10 @@ func (m *model) updateMsgKeyDown(msg gruid.MsgKeyDown) {
 		m.action = action{Type: ActionBump, Delta: pdelta.Shift(1, 0)}
 	case gruid.KeyEnter, ".":
 		m.action = action{Type: ActionWait}
-	case gruid.KeyEscape, "q":
+	case "Q":
 		m.action = action{Type: ActionQuit}
+	case "S":
+		m.action = action{Type: ActionSave}
 	case "m":
 		m.action = action{Type: ActionViewMessages}
 	case "i":
@@ -231,6 +303,7 @@ const (
 	ColorStatusHealthy
 	ColorStatusWounded
 	ColorConsumable
+	ColorMenuActive
 )
 
 const (
@@ -242,6 +315,8 @@ const (
 func (m *model) Draw() gruid.Grid {
 	mapgrid := m.grid.Slice(m.grid.Range().Shift(0, LogLines, 0, -1))
 	switch m.mode {
+	case modeGameMenu:
+		return m.DrawGameMenu()
 	case modeMessageViewer:
 		m.grid.Copy(m.viewer.Draw())
 		return m.grid
@@ -286,6 +361,16 @@ func (m *model) Draw() gruid.Grid {
 	m.DrawNames(mapgrid)
 	m.DrawLog(m.grid.Slice(m.grid.Range().Lines(0, LogLines)))
 	m.DrawStatus(m.grid.Slice(m.grid.Range().Line(m.grid.Size().Y - 1)))
+	return m.grid
+}
+
+var mainMenuAnchor = gruid.Point{10, 6}
+
+// DrawGameMenu draws the game's main menu.
+func (m *model) DrawGameMenu() gruid.Grid {
+	m.grid.Fill(gruid.Cell{Rune: ' '})
+	m.grid.Slice(m.gameMenu.Bounds().Add(mainMenuAnchor)).Copy(m.gameMenu.Draw())
+	m.info.Draw(m.grid.Slice(m.grid.Range().Line(12).Shift(10, 0, 0, 0)))
 	return m.grid
 }
 
