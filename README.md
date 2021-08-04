@@ -17,6 +17,7 @@ TCOD.
 * [Part 7](https://github.com/anaseto/gruid-rltuto/tree/part-7) - Creating the Interface
 * [Part 8](https://github.com/anaseto/gruid-rltuto/tree/part-8) - Items and Inventory
 * [Part 9](https://github.com/anaseto/gruid-rltuto/tree/part-9) - Ranged Scrolls and Targeting
+* [Part 10](https://github.com/anaseto/gruid-rltuto/tree/part-10) - Saving and Loading
 
 ## Tips & Remarks
 
