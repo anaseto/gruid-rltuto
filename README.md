@@ -694,3 +694,7 @@ index 482d13e..b7580dc 100644
  	// defined foreground and background colors.
  	return t.drawer.Draw(c.Rune, fg, bg)
 ```
+
+* * *
+
+[Next Part](https://github.com/anaseto/gruid-rltuto/tree/part-10)
