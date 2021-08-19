@@ -66,6 +66,7 @@ func (es *ECS) RemoveEntity(i int) {
 	delete(es.Name, i)
 	delete(es.Style, i)
 	delete(es.Inventory, i)
+	delete(es.Statuses, i)
 }
 
 // MoveEntity moves the i-th entity to p.
