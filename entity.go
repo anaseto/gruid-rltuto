@@ -90,8 +90,8 @@ func (es *ECS) PP() gruid.Point {
 	return es.Positions[es.PlayerID]
 }
 
-// MonsterAt returns the Monster at p along with its index, if any, or -1 if
-// there is no monster at p.
+// MonsterAt returns the id of the Monster at p, if any, or -1 if there is no
+// monster at p.
 func (es *ECS) MonsterAt(p gruid.Point) int {
 	for i, q := range es.Positions {
 		if p != q || !es.Alive(i) {
