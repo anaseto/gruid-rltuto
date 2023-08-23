@@ -1,3 +1,5 @@
+**Migrated to https://codeberg.org/anaseto/gruid-rltuto because of 2FA requirement**
+
 # Gruid Go Roguelike Tutorial
 
 This tutorial follows the overall structure of the [TCOD Python
